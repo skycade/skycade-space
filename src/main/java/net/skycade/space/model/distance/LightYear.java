@@ -24,7 +24,7 @@ public class LightYear {
    *
    * @param value The value of the distance unit.
    */
-  public LightYear(double value) {
+  private LightYear(double value) {
     this.value = new BigDecimal(value);
   }
 
@@ -63,6 +63,16 @@ public class LightYear {
    * @return The distance unit.
    */
   public static LightYear of(double lightYears) {
+    return new LightYear(lightYears);
+  }
+
+  /**
+   * Convert this distance unit from a given value.
+   *
+   * @param lightYears The value of the distance unit.
+   * @return The distance unit.
+   */
+  public static LightYear of(BigDecimal lightYears) {
     return new LightYear(lightYears);
   }
 }

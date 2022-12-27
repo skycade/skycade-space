@@ -41,28 +41,28 @@ public class SectorStar extends PhysicsObject {
 
     SectorContainedPos shipPosition = space.getShipPosition();
     BigDecimal drawSphereRadius = SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS;
-    BigDecimal starRadius = this.radius;
     BigDecimal distanceFromShipToStar = this.getPosition().distance(shipPosition);
 
     // calculate the radius of the object on the surface of the 'draw sphere'
-    BigDecimal radiusOnDrawSphere = starRadius.multiply(drawSphereRadius)
+    BigDecimal radiusOnDrawSphere = this.radius.multiply(drawSphereRadius)
         .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
 
     // calculate the position of the object on the surface of the 'draw sphere'
     // remember, the position of the object is constrained to the SURFACE of the 'draw sphere'
-    BigDecimal xOnDrawSphere = this.getPosition().x().multiply(drawSphereRadius)
+    SectorContainedPos relativePosition = this.getPosition().sub(shipPosition);
+    BigDecimal xOnDrawSphere = relativePosition.x().multiply(drawSphereRadius)
         .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
-    BigDecimal yOnDrawSphere = this.getPosition().y().multiply(drawSphereRadius)
+    BigDecimal yOnDrawSphere = relativePosition.y().multiply(drawSphereRadius)
         .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
-    BigDecimal zOnDrawSphere = this.getPosition().z().multiply(drawSphereRadius)
+    BigDecimal zOnDrawSphere = relativePosition.z().multiply(drawSphereRadius)
         .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
 
     Pos starCenterInWorld = new Pos(xOnDrawSphere.doubleValue(), yOnDrawSphere.doubleValue(),
         zOnDrawSphere.doubleValue()).add(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP);
 
-    // if the star in the sector is more than 100,000,000 meters away from the ship, just draw a
+    // if the star in the sector is more than 1,000,000,000 meters away from the ship, just draw a
     // small dot/circle/whatever
-    if (distanceFromShipToStar.compareTo(new BigDecimal("100000000")) > 0) {
+    if (distanceFromShipToStar.compareTo(new BigDecimal("1000000000")) > 0) {
       drawNonRenderedStar(space, starCenterInWorld);
       return;
     }

@@ -17,6 +17,6 @@ public class PredefinedEmptySpaceSector extends Sector {
    * Constructor.
    */
   public PredefinedEmptySpaceSector() {
-    super(SectorPosition.EMPTY_SPACE, new ArrayList<>(), new LightYear(10).toMeters());
+    super(SectorPosition.EMPTY_SPACE, new ArrayList<>(), LightYear.of(10).toMeters());
   }
 }
