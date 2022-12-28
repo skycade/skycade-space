@@ -9,6 +9,7 @@ import net.minestom.server.particle.ParticleCreator;
 import net.skycade.serverruntime.api.space.GameSpace;
 import net.skycade.space.model.physics.PhysicsObject;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
+import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.space.SpaceShipSpace;
 import net.skycade.space.space.SpaceShipSpaceConstants;
 
@@ -130,13 +131,62 @@ public class SectorStar extends PhysicsObject {
     // no-op
   }
 
-  private void drawNonRenderedStar(GameSpace space, Pos starCenterInWorld) {
-    // make a little circle of particles
-    for (int i = 0; i < 5; i++) {
-      getPredeterminedPointOnSphereSurfaceGivenIndex(5, i, 0.2);
-      Pos particlePos =
-          getPredeterminedPointOnSphereSurfaceGivenIndex(5, i, 0.2).add(starCenterInWorld);
-      drawParticle(space, particlePos);
+  private void drawNonRenderedStar(SpaceShipSpace space, Pos starCenterInWorld) {
+    // get the directional velocity of the ship
+    BigDecimal shipVelocity = space.getSpaceShipReference().getVelocity().length();
+
+    // if the velocity is greater than the speed of light,
+    // draw "hyperspace" lines in the direction of the ship's velocity
+    if (shipVelocity.compareTo(new BigDecimal("299792458")) > 0) {
+      drawHyperspaceLines(space, starCenterInWorld, shipVelocity);
+      return;
+    }
+
+    drawParticle(space, starCenterInWorld);
+  }
+
+  /**
+   * Draws hyperspace lines
+   *
+   * @param space             space
+   * @param starCenterInWorld star center in world
+   * @param shipVelocity      ship velocity
+   */
+  public void drawHyperspaceLines(SpaceShipSpace space, Pos starCenterInWorld,
+                                  BigDecimal shipVelocity) {
+    // get the direction of the ship's velocity
+    SectorContainedVec shipVelocityDirection =
+        space.getSpaceShipReference().getVelocity().div(shipVelocity);
+
+    // in the position of a star, draw a stretched line in the direction of the ship's velocity
+    // to make it look like the star is moving in hyperspace
+
+    // transform ship velocity length to a length that is visible on the screen
+    BigDecimal transformedShipVelocity =
+        shipVelocity.divide(new BigDecimal("1000000000000"), 10, RoundingMode.HALF_UP);
+    SectorContainedVec transformedShipVelocityDirection =
+        shipVelocityDirection.mul(transformedShipVelocity);
+
+    Pos end = starCenterInWorld.add(new Pos(transformedShipVelocityDirection.x().doubleValue(),
+        transformedShipVelocityDirection.y().doubleValue(),
+        transformedShipVelocityDirection.z().doubleValue()));
+
+    // draw the line, split into 200 segments
+    for (int i = 0; i < 200; i++) {
+      double progress = (double) i / 200;
+      Pos currentPos = starCenterInWorld.add(end.sub(starCenterInWorld).mul(progress));
+
+      // distance from the particle to the ship
+      double distanceFromParticleToShip =
+          currentPos.sub(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP).asVec().length();
+
+      if (distanceFromParticleToShip == 0) {
+        continue;
+      }
+
+      // draw the particle
+      drawParticle(space, translateRelativeOriginWorldPointToDrawSphereBound(currentPos,
+          BigDecimal.valueOf(distanceFromParticleToShip), starCenterInWorld));
     }
   }
 
@@ -171,25 +221,21 @@ public class SectorStar extends PhysicsObject {
         continue;
       }
 
-      // calculate the position of the particle on the 3D star that is centered around the surf
-      // of the 'draw sphere'
-      BigDecimal xOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.x())
-          .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
-          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
-      BigDecimal yOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.y())
-          .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
-          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
-      BigDecimal zOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.z())
-          .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
-          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
-
-      // this particle position is in 3D relative to the surface of the 'draw sphere' (pops out)
-      Pos particlePos = new Pos(xOnDrawSphere.doubleValue(), yOnDrawSphere.doubleValue(),
-          zOnDrawSphere.doubleValue()).add(starCenterInWorldRelativeToShip);
-      // this particle position is in 2D relative to the surface of the 'draw sphere' (squished)
       Pos radiusBoundParticlePos =
-          particlePos.mul(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS.doubleValue())
-              .div(particlePos.distance(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP));
+          translateRelativeOriginWorldPointToDrawSphereBound(pointOn3DStarAroundOrigin,
+              distanceFromShipToPointOn3DStarSurface, starCenterInWorldRelativeToShip);
+//      // calculate the position of the particle on the 3D star that is centered around the surf
+//      // of the 'draw sphere'
+//      BigDecimal xOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.x())
+//          .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
+//          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
+//      BigDecimal yOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.y())
+//          .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
+//          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
+//      BigDecimal zOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.z())
+//          .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
+//          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
+
 
 //      Pos particlePos = new Pos(xOnDrawSphereAdjusted.doubleValue(),
 //          yOnDrawSphereAdjusted.doubleValue(), zOnDrawSphereAdjusted.doubleValue())
@@ -197,6 +243,32 @@ public class SectorStar extends PhysicsObject {
 
       drawParticle(space, radiusBoundParticlePos);
     }
+  }
+
+  private Pos translateRelativeOriginWorldPointToDrawSphereBound(Pos pointOn3DStarAroundOrigin,
+                                                                 BigDecimal distanceFromShipToPointOn3DStarSurface,
+                                                                 Pos starCenterInWorldRelativeToShip) {
+    // calculate the position of the particle on the 3D star that is centered around the surf
+    // of the 'draw sphere'
+    BigDecimal xOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.x())
+        .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
+        .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
+    BigDecimal yOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.y())
+        .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
+        .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
+    BigDecimal zOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.z())
+        .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
+        .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
+
+    // this particle position is in 3D relative to the surface of the 'draw sphere' (pops out)
+    Pos particlePos = new Pos(xOnDrawSphere.doubleValue(), yOnDrawSphere.doubleValue(),
+        zOnDrawSphere.doubleValue()).add(starCenterInWorldRelativeToShip);
+    // this particle position is in 2D relative to the surface of the 'draw sphere' (squished)
+    Pos radiusBoundParticlePos =
+        particlePos.mul(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS.doubleValue())
+            .div(particlePos.distance(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP));
+
+    return radiusBoundParticlePos;
   }
 
   private Pos getPredeterminedPointOnSphereSurfaceGivenIndex(int numOfParticles, int i,

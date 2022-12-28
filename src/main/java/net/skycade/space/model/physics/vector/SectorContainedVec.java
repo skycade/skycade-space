@@ -1,6 +1,8 @@
 package net.skycade.space.model.physics.vector;
 
+import ch.obermuhlner.math.big.BigDecimalMath;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 
 public record SectorContainedVec(BigDecimal x, BigDecimal y, BigDecimal z)
@@ -88,6 +90,29 @@ public record SectorContainedVec(BigDecimal x, BigDecimal y, BigDecimal z)
   @Override
   public SectorContainedVec withZ(BigDecimal z) {
     return new SectorContainedVec(x, y, z);
+  }
+
+  public BigDecimal horizontalDirection() {
+    // use trigonometry to calculate the horizontal direction
+    return BigDecimalMath.atan2(x, z, MathContext.DECIMAL128);
+  }
+
+  public BigDecimal verticalDirection() {
+    // use trigonometry to calculate the vertical direction
+    BigDecimal horizontalLength =
+        BigDecimalMath.sqrt(x.multiply(x).multiply(z.multiply(z)), MathContext.DECIMAL128);
+    return BigDecimalMath.atan2(y, horizontalLength, MathContext.DECIMAL128);
+  }
+
+  public BigDecimal projectOnto(SectorContainedVec other) {
+    if (other.length().equals(BigDecimal.ZERO)) {
+      return BigDecimal.ZERO;
+    }
+    return this.dot(other).divide(other.length(), MathContext.DECIMAL128);
+  }
+
+  public BigDecimal dot(SectorContainedVec other) {
+    return x.multiply(other.x()).add(y.multiply(other.y())).add(z.multiply(other.z()));
   }
 
   @Override

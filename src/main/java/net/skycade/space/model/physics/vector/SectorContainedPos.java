@@ -125,6 +125,10 @@ public record SectorContainedPos(BigDecimal x, BigDecimal y, BigDecimal z)
     return BigDecimal.valueOf(distanceSquared(other).sqrt(MathContext.DECIMAL128).doubleValue());
   }
 
+  public SectorContainedVec toVector() {
+    return new SectorContainedVec(x, y, z);
+  }
+
   @Override
   public String toString() {
     return "SectorContainedPos{" + "x=" + x + ", y=" + y + ", z=" + z + '}';

@@ -13,6 +13,7 @@ import net.minestom.server.instance.AnvilLoader;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.particle.ParticleCreator;
+import net.minestom.server.timer.ExecutionType;
 import net.minestom.server.timer.Task;
 import net.skycade.serverruntime.api.space.GameSpace;
 import net.skycade.space.constants.PhysicsAndRenderingConstants;
@@ -73,7 +74,7 @@ public class SpaceShipSpace extends GameSpace {
     this.sectorRenderer = new SectorRenderer(this);
     this.sector = new PredefinedEmptySpaceSector();
     this.spaceShipReference = new SectorSpaceShip(
-        new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+        new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("9461000000000000000")));
   }
 
   @Override
@@ -87,8 +88,7 @@ public class SpaceShipSpace extends GameSpace {
       event.getPlayer().setGameMode(GameMode.ADVENTURE);
 
       scheduleNextTick((i) -> {
-        // schedule an asynchronous task to render the sector
-        new Thread(this::runJoinTasks).start();
+        runJoinTasks();
       });
     });
 
@@ -124,18 +124,18 @@ public class SpaceShipSpace extends GameSpace {
 
       // add 400 random small stars around the spaceship
       for (int i = 0; i < 200; i++) {
-        // random x between -1 and 1
-        int x = (int) (Math.random() * 2) - 1;
+        // random x between -0.2 and 0.2
+        int x = (int) (Math.random() * 4000000) - 2000000;
         BigDecimal xBigDecimal = new BigDecimal(x + "." + randomNumber(50));
         LightYear xLightYear = LightYear.of(xBigDecimal);
 
         // random y between -1 and 1
-        int y = (int) (Math.random() * 2) - 1;
+        int y = (int) (Math.random() * 4000000) - 2000000;
         BigDecimal yBigDecimal = new BigDecimal(y + "." + randomNumber(50));
         LightYear yLightYear = LightYear.of(yBigDecimal);
 
         // random z between -1 and 1
-        int z = (int) (Math.random() * 2) - 1;
+        int z = (int) (Math.random() * 4000000) - 2000000;
         BigDecimal zBigDecimal = new BigDecimal(z + "." + randomNumber(50));
         LightYear zLightYear = LightYear.of(zBigDecimal);
 
@@ -164,42 +164,34 @@ public class SpaceShipSpace extends GameSpace {
   }
 
   private void runJoinTasks() {
-    Task task1 = scheduler().buildTask(() -> {
-      try {
-        drawHyperSpeedLines();
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }).repeat(Duration.ofMillis(75)).schedule();
+//    Task task1 = scheduler().buildTask(() -> {
+//      try {
+//        drawHyperSpeedLines();
+//      } catch (InterruptedException e) {
+//        throw new RuntimeException(e);
+//      }
+//    }).repeat(Duration.ofMillis(100)).executionType(ExecutionType.SYNC).schedule();
+//
+//    // cancel the previous task
+//    scheduler().buildTask(task1::cancel).delay(Duration.ofSeconds(3)).schedule();
+
+    scheduler().buildTask(sectorRenderer::render)
+        .repeat(Duration.ofMillis(PhysicsAndRenderingConstants.RENDER_DELAY_MILLIS))
+        .delay(Duration.ofSeconds(2)).executionType(ExecutionType.SYNC).schedule();
 
     scheduler().buildTask(() -> {
-      // cancel the previous task
-      task1.cancel();
+          for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
+            containedObject.tickPhysics();
+          }
+          this.spaceShipReference.tickPhysics();
+        }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
+        .delay(Duration.ofSeconds(2)).executionType(ExecutionType.SYNC).schedule();
 
-      scheduler().buildTask(sectorRenderer::render)
-          .repeat(Duration.ofMillis(PhysicsAndRenderingConstants.RENDER_DELAY_MILLIS)).schedule();
-
-      scheduler().buildTask(() -> {
-        // tick physics for all the stars
-        for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
-          containedObject.tickPhysics();
-        }
-        // tick physics for the spaceship
-        this.spaceShipReference.tickPhysics();
-      }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS)).schedule();
-
-      scheduler().buildTask(() -> {
-        this.spaceShipReference.setAngularVelocity(
-            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.valueOf(Math.PI / 400),
-                BigDecimal.ZERO));
-        this.spaceShipReference.thrustForward(new BigDecimal("10000"), 5, this);
-        scheduler().buildTask(() -> {
-          this.spaceShipReference.setAngularVelocity(
-              new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-        }).delay(Duration.ofSeconds(2)).schedule();
-      }).delay(Duration.ofSeconds(1)).schedule();
-
-    }).delay(Duration.ofSeconds(1)).schedule();
+    scheduler().buildTask(() -> {
+      this.spaceShipReference.setAcceleration(
+          new SectorContainedVec(BigDecimal.ZERO,
+              BigDecimal.ZERO, new BigDecimal("-9461000000000000000")));
+    }).delay(Duration.ofSeconds(2)).executionType(ExecutionType.SYNC).schedule();
   }
 
 
