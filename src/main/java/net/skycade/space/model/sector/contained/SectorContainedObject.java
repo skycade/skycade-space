@@ -226,7 +226,7 @@ public abstract class SectorContainedObject {
 
     // calculate the velocity of the object in meters per second using the acceleration
     // and the time since the last tick
-    BigDecimal velocityX = velocity.x().add(acceleration.y().multiply(
+    BigDecimal velocityX = velocity.x().add(acceleration.x().multiply(
         BigDecimal.valueOf(timeSinceLastTick)
             .divide(BigDecimal.valueOf(physicsTickDelayMillis), 10, RoundingMode.HALF_UP)));
     BigDecimal velocityY = velocity.y().add(acceleration.y().multiply(

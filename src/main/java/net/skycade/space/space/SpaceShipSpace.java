@@ -21,6 +21,7 @@ import net.skycade.space.model.distance.LightYear;
 import net.skycade.space.model.physics.object.SectorPlanet;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
+import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.model.sector.Sector;
 import net.skycade.space.model.sector.contained.SectorContainedObject;
 import net.skycade.space.model.sector.contained.SectorSpaceShip;
@@ -83,10 +84,11 @@ public class SpaceShipSpace extends GameSpace {
     this.instanceBoundPlayerEventNode().addListener(PlayerSpawnEvent.class, event -> {
       event.getPlayer().setRespawnPoint(SpaceShipSpaceConstants.SPAWN_POSITION);
       event.getPlayer().teleport(SpaceShipSpaceConstants.SPAWN_POSITION);
-      event.getPlayer().setGameMode(GameMode.SPECTATOR);
+      event.getPlayer().setGameMode(GameMode.ADVENTURE);
 
       scheduleNextTick((i) -> {
-        runJoinTasks();
+        // schedule an asynchronous task to render the sector
+        new Thread(this::runJoinTasks).start();
       });
     });
 
@@ -184,18 +186,17 @@ public class SpaceShipSpace extends GameSpace {
         }
         // tick physics for the spaceship
         this.spaceShipReference.tickPhysics();
-        System.out.println(
-            "this.spaceShipReference.getVelocity() = " + this.spaceShipReference.getVelocity());
       }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS)).schedule();
 
       scheduler().buildTask(() -> {
-        this.spaceShipReference.setRotation(new SectorContainedPos(
-            BigDecimal.ZERO,
-            BigDecimal.ONE,
-            BigDecimal.ZERO));
+        this.spaceShipReference.setAngularVelocity(
+            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.valueOf(Math.PI / 200),
+                BigDecimal.ZERO));
         scheduler().buildTask(() -> {
+          this.spaceShipReference.setAngularVelocity(
+              new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
           this.spaceShipReference.thrustForward(new BigDecimal("10000"), 5, this);
-        }).schedule();
+        }).delay(Duration.ofSeconds(2)).schedule();
       }).delay(Duration.ofSeconds(1)).schedule();
 
     }).delay(Duration.ofSeconds(1)).schedule();
