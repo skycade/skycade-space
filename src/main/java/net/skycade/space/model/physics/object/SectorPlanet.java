@@ -219,7 +219,7 @@ public class SectorPlanet extends PhysicsObject {
   private void drawParticle(GameSpace space, Pos minecraftPos) {
     // todo: draw a particle at the given position.
     ParticlePacket particlePacket =
-        ParticleCreator.createParticlePacket(Particle.DUST, minecraftPos.x(), minecraftPos.y(),
+        ParticleCreator.createParticlePacket(Particle.CRIT, minecraftPos.x(), minecraftPos.y(),
             minecraftPos.z(), 0, 0, 0, 1);
     space.sendGroupedPacket(particlePacket);
   }
