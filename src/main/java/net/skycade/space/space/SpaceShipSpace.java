@@ -190,7 +190,7 @@ public class SpaceShipSpace extends GameSpace {
 
       scheduler().buildTask(() -> {
         this.spaceShipReference.setAngularVelocity(
-            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.valueOf(Math.PI / 200),
+            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.valueOf(Math.PI / 400),
                 BigDecimal.ZERO));
         this.spaceShipReference.thrustForward(new BigDecimal("10000"), 5, this);
         scheduler().buildTask(() -> {
