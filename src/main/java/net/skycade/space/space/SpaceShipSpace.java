@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.event.player.PlayerSpawnEvent;
@@ -15,10 +14,11 @@ import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.timer.Task;
-import net.minestom.server.timer.TaskSchedule;
 import net.skycade.serverruntime.api.space.GameSpace;
+import net.skycade.space.constants.PhysicsAndRenderingConstants;
 import net.skycade.space.model.dimension.SpaceDimension;
 import net.skycade.space.model.distance.LightYear;
+import net.skycade.space.model.physics.object.SectorPlanet;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
 import net.skycade.space.model.physics.vector.SectorContainedVec;
@@ -63,7 +63,7 @@ public class SpaceShipSpace extends GameSpace {
   /**
    * A reference to the player/spaceship's position in the sector.
    */
-  private final SectorContainedObject spaceShipReference;
+  private final SectorSpaceShip spaceShipReference;
 
   /**
    * Constructor.
@@ -73,49 +73,53 @@ public class SpaceShipSpace extends GameSpace {
     this.sectorRenderer = new SectorRenderer(this);
     this.sector = new PredefinedEmptySpaceSector();
     this.spaceShipReference = new SectorSpaceShip(
-        new SectorContainedPos(new BigDecimal("500000000"), BigDecimal.ZERO, BigDecimal.ZERO));
+        new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
   }
-
-  //
-  // todo: redo the whole star animation thing
-  //
-  // add "stars" to the scene, and when drawing them,
-  // make them a "ball" if they're moving slow (CREATE PHYSICS ENGINE AND STORE THE VELOCITY IN THE STAR OBJECT)
-  // and if they're moving fast, make them a "line" (CREATE PHYSICS ENGINE AND STORE THE VELOCITY IN THE STAR OBJECT)
-  // this will GREATLY reduce the amount of code needed, because we can just modulate the velocity of each start instead
-  // of individually drawing each particle
 
   @Override
   public void init() {
     setChunkLoader(new AnvilLoader(Path.of("spaceship-space")));
     setTimeRate(0);
 
-    // info key about the sector
-    // +x is behind the spaceship
-    // +y is up
-    // +z is to the left of the spaceship
-
-
     this.instanceBoundPlayerEventNode().addListener(PlayerSpawnEvent.class, event -> {
       event.getPlayer().setRespawnPoint(SpaceShipSpaceConstants.SPAWN_POSITION);
       event.getPlayer().teleport(SpaceShipSpaceConstants.SPAWN_POSITION);
       event.getPlayer().setGameMode(GameMode.SPECTATOR);
-      runJoinTasks();
+
+      scheduleNextTick((i) -> {
+        runJoinTasks();
+      });
     });
+
+
+    // top down view:
+    // forwards: -z
+    //       -z
+    //       |
+    // -x  ------ +x
+    //       |
+    //       +z
+    //
 
     scheduleNextTick((in) -> {
       SectorContainedPos starPos =
-          new SectorContainedPos(new BigDecimal("-84400000"), BigDecimal.ZERO, BigDecimal.ZERO);
+          new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("-84400000"));
       SectorStar star = new SectorStar(starPos, new BigDecimal("1737400"));
 
       SectorContainedPos secondStarPos =
           new SectorContainedPos(new BigDecimal("-44400000"), BigDecimal.ZERO,
-              new BigDecimal("44400000"));
+              new BigDecimal("-44400000"));
       SectorStar secondStar = new SectorStar(secondStarPos, new BigDecimal("2737400"));
+
+      SectorContainedPos planetPos =
+          new SectorContainedPos(new BigDecimal("44400000"), BigDecimal.ZERO,
+              new BigDecimal("-54400000"));
+      SectorPlanet planet = new SectorPlanet(planetPos, new BigDecimal("5737400"));
 
       // add the star to the sector
       this.sector.addContainedObject(star);
       this.sector.addContainedObject(secondStar);
+      this.sector.addContainedObject(planet);
 
       // add 400 random small stars around the spaceship
       for (int i = 0; i < 200; i++) {
@@ -155,34 +159,10 @@ public class SpaceShipSpace extends GameSpace {
     return number.toString();
   }
 
-  private static class BeamData {
-    private final Pos start;
-    private final Pos end;
-
-    public BeamData(Pos start, Pos end) {
-      this.start = start;
-      this.end = end;
-    }
-
-    public Pos getStart() {
-      return start;
-    }
-
-    public Pos getEnd() {
-      return end;
-    }
+  private record BeamData(Pos start, Pos end) {
   }
 
   private void runJoinTasks() {
-    scheduler().buildTask(() -> {
-      // tick physics for all the stars
-      for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
-        containedObject.tickPhysics();
-      }
-      // tick physics for the spaceship
-      this.spaceShipReference.tickPhysics();
-    }).delay(TaskSchedule.tick(20)).repeat(Duration.ofMillis(100)).schedule();
-
     // do hyperspace animation for 2 seconds then star rendering the sector
     Task task1 = scheduler().buildTask(() -> {
       try {
@@ -190,82 +170,80 @@ public class SpaceShipSpace extends GameSpace {
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
-    }).delay(TaskSchedule.tick(20)).repeat(Duration.ofMillis(100)).schedule();
+    }).repeat(Duration.ofMillis(75)).schedule();
 
     scheduler().buildTask(() -> {
       // cancel the previous task
       task1.cancel();
 
-      MinecraftServer.getSchedulerManager().buildTask(sectorRenderer::render)
-          .repeat(Duration.ofMillis(100)).schedule();
+      scheduler().buildTask(sectorRenderer::render)
+          .repeat(Duration.ofMillis(PhysicsAndRenderingConstants.RENDER_DELAY_MILLIS)).schedule();
 
       scheduler().buildTask(() -> {
-        this.spaceShipReference.setVelocity(this.spaceShipReference.getVelocity()
-            .add(new BigDecimal("-51000000"), BigDecimal.ZERO, BigDecimal.ZERO));
-        // add an acc to the spaceship so it slows down
-        this.spaceShipReference.setAcceleration(this.spaceShipReference.getAcceleration()
-            .add(new BigDecimal("2300000"), BigDecimal.ZERO, BigDecimal.ZERO));
+        // tick physics for all the stars
+        for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
+          containedObject.tickPhysics();
+        }
+        // tick physics for the spaceship
+        this.spaceShipReference.tickPhysics();
+      }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS)).schedule();
 
-        // after 1 second, set the acc to 0 and vel to constant
-        scheduler().buildTask(() -> {
-          this.spaceShipReference.setVelocity(
-              new SectorContainedVec(new BigDecimal("-500000"), BigDecimal.ZERO, BigDecimal.ZERO));
-          this.spaceShipReference.setAcceleration(
-              new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-        }).delay(TaskSchedule.tick(70)).schedule();
-      }).delay(TaskSchedule.tick(1)).schedule();
-    }).delay(TaskSchedule.tick(20)).schedule();
+      scheduler().buildTask(() -> {
+        this.spaceShipReference.setAngularVelocity(
+            new SectorContainedVec(BigDecimal.ZERO, new BigDecimal(Math.PI / 500),
+                BigDecimal.ZERO));
+      }).delay(Duration.ofSeconds(2)).schedule();
+    }).delay(Duration.ofSeconds(3)).schedule();
   }
 
 
   private void drawHyperSpeedLines() throws InterruptedException {
-    Pos hyperSpeedParticleCenter = new Pos(-300, 215, 2.5);
+    Pos hyperSpeedParticleCenter = new Pos(0, 0, -200);
     Pos centerOfShip = SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP;
     int particlesPerBeamSegment = 1300;
-    int minimumEndingRadiusAroundShip = 50;
-    int maximumEndingRadiusAroundShip = 100;
+    int minimumEndingRadiusAroundShip = 30;
+    int maximumEndingRadiusAroundShip = 50;
+    int minimumStartingRadiusAroundShip = 10;
+    int maximumStartingRadiusAroundShip = 15;
     int numberOfBeams = 200;
     double timeInSecondsForEachBeamToTravel = 2;
 
     List<BeamData> beams = new ArrayList<>();
 
-    // the ship starts at -x and along the length from front to back it goes +x
-    // the ship starts at +z and along the length from left to right it goes -z
-    // the ship starts at -y and along the length from bottom to top it goes +y
+    // the ship starts at -z, front to back is -z to +z
+    // ship left to right is -x to +x
 
     // draw 50 beams of particles coming from the center and going past the center of the ship
     for (int beam = 0; beam < numberOfBeams; beam++) {
       // get a random ending distance for the beam, in a circle around the center of the ship
       double randomAngle = Math.random() * 2 * Math.PI;
-      // get the difference in z and y coordinates between the center of the ship and the end of the beam (random radius)
+      // get the difference in x and y coordinates between the center of the ship and the end of the beam (random radius)
       double randomRadius = minimumEndingRadiusAroundShip +
           Math.random() * (maximumEndingRadiusAroundShip - minimumEndingRadiusAroundShip);
-      double endingZDiff = Math.cos(randomAngle) * randomRadius;
+      double endingXDiff = Math.cos(randomAngle) * randomRadius;
       double endingYDiff = Math.sin(randomAngle) * randomRadius;
 
-      double randomStartRadius = 10 + Math.random() * (30 - 10);
-      double startingZDiff = Math.cos(randomAngle) * randomStartRadius;
+      double randomStartRadius = minimumStartingRadiusAroundShip +
+          Math.random() * (maximumStartingRadiusAroundShip - minimumStartingRadiusAroundShip);
+      double startingXDiff = Math.cos(randomAngle) * randomStartRadius;
       double startingYDiff = Math.sin(randomAngle) * randomStartRadius;
 
-      beams.add(new BeamData(
-          new Pos(hyperSpeedParticleCenter.x(), hyperSpeedParticleCenter.y() + startingYDiff,
-              hyperSpeedParticleCenter.z() + startingZDiff),
-          new Pos(centerOfShip.x() + 100, centerOfShip.y() + endingYDiff,
-              centerOfShip.z() + endingZDiff)));
+      beams.add(new BeamData(new Pos(hyperSpeedParticleCenter.x() + startingXDiff,
+          hyperSpeedParticleCenter.y() + startingYDiff, hyperSpeedParticleCenter.z()),
+          new Pos(centerOfShip.x() + endingXDiff, centerOfShip.y() + endingYDiff,
+              centerOfShip.z() + 100)));
     }
 
     // recreate the star wars hyper-speed effect using particles
     for (BeamData beamData : beams) {
       // get the difference in x, y, and z coordinates between the start and end of the beam
-      double xDiff = beamData.getEnd().x() - beamData.getStart().x();
-      double yDiff = beamData.getEnd().y() - beamData.getStart().y();
-      double zDiff = beamData.getEnd().z() - beamData.getStart().z();
+      double xDiff = beamData.end().x() - beamData.start().x();
+      double yDiff = beamData.end().y() - beamData.start().y();
+      double zDiff = beamData.end().z() - beamData.start().z();
 
       // get the difference in x, y, and z coordinates between each particle in the beam
       double xDiffPerParticle = xDiff / particlesPerBeamSegment;
       double yDiffPerParticle = yDiff / particlesPerBeamSegment;
-
-      // get the difference in z and y coordinates between each particle in the beam
       double zDiffPerParticle = zDiff / particlesPerBeamSegment;
 
       // draw the beam (make a task that runs along the length of the beam, drawing the segments moving along the beam)
@@ -273,9 +251,9 @@ public class SpaceShipSpace extends GameSpace {
         // draw the beam
         for (int j = 0; j < particlesPerBeamSegment; j++) {
           // get the current position of the particle
-          double currentX = beamData.getStart().x() + (xDiffPerParticle * j);
-          double currentY = beamData.getStart().y() + (yDiffPerParticle * j);
-          double currentZ = beamData.getStart().z() + (zDiffPerParticle * j);
+          double currentX = beamData.start().x() + (xDiffPerParticle * j);
+          double currentY = beamData.start().y() + (yDiffPerParticle * j);
+          double currentZ = beamData.start().z() + (zDiffPerParticle * j);
 
           // get the current position of the particle
           Pos currentPos = new Pos(currentX, currentY, currentZ);
@@ -295,139 +273,6 @@ public class SpaceShipSpace extends GameSpace {
 
       // stagger the beams, so they don't all start at the same time
       Thread.sleep(50);
-    }
-  }
-
-  private static class StarData {
-    private final Pos start;
-    private final Pos end;
-
-    private StarData(Pos start, Pos end) {
-      this.start = start;
-      this.end = end;
-    }
-
-    public Pos getStart() {
-      return start;
-    }
-
-    public Pos getEnd() {
-      return end;
-    }
-  }
-
-  private void drawStars() {
-    Pos hyperSpeedParticleCenter = new Pos(-300, 215, 2.5);
-    Pos centerOfShip = SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP;
-    int numberOfStars = 100;
-    double fastSpeedParticlesPerSecond = 15;
-    double slowSpeedBlocksPerSecond = 0.06;
-    int numberOfParticlesPerStarTravelTrack = 1000;
-
-
-    // the ship starts at -x and along the length from front to back it goes +x
-    // the ship starts at +z and along the length from left to right it goes -z
-    // the ship starts at -y and along the length from bottom to top it goes +y
-
-    List<StarData> stars = new ArrayList<>();
-
-    // get random points in a circle surrounding the starting point of the particles
-    // we'll move them slowly towards the center of the ship
-    for (int star = 0; star < numberOfStars; star++) {
-      // get a random angle
-      double randomAngle = Math.random() * 2 * Math.PI;
-      // get the difference in z and y coordinates between the center of the ship and the end of the beam (random radius)
-      double randomRadius = 10 + Math.random() * (150 - 10);
-      double endingZDiff = Math.cos(randomAngle) * randomRadius;
-      double endingYDiff = Math.sin(randomAngle) * randomRadius;
-
-      Pos start = new Pos(hyperSpeedParticleCenter.x(), hyperSpeedParticleCenter.y() + endingYDiff,
-          hyperSpeedParticleCenter.z() + endingZDiff);
-      Pos end = new Pos(centerOfShip.x() + 100, hyperSpeedParticleCenter.y() + endingYDiff,
-          hyperSpeedParticleCenter.z() + endingZDiff);
-
-      stars.add(new StarData(start, end));
-    }
-
-    // draw the stars, one particle for each star
-    // do a velocity curve, go really fast like the stars are coming in, then slow down quickly
-    // and maintain the slow speed up until the end of the path
-    for (StarData starData : stars) {
-      // get the difference in x, y, and z coordinates between the start and end of the beam
-      double xDiff = starData.getEnd().x() - starData.getStart().x();
-      double yDiff = starData.getEnd().y() - starData.getStart().y();
-      double zDiff = starData.getEnd().z() - starData.getStart().z();
-
-      new Thread(() -> {
-        double currentX = starData.getStart().x();
-        double currentY = starData.getStart().y();
-        double currentZ = starData.getStart().z();
-
-        // start the particle at the start of the path, go fast then quickly slow down and maintain the slow speed for the rest of the path
-        for (int j = 0; j < 420; j++) {
-          // get the current position of the particle
-          Pos currentPos = new Pos(currentX, currentY, currentZ);
-
-          // draw the particle
-          drawParticle(currentPos);
-
-          // get the difference in x, y, and z coordinates between each particle in the beam
-          double xDiffPerParticle = xDiff / numberOfParticlesPerStarTravelTrack;
-          double yDiffPerParticle = yDiff / numberOfParticlesPerStarTravelTrack;
-          double zDiffPerParticle = zDiff / numberOfParticlesPerStarTravelTrack;
-
-          // get the current position of the particle
-          currentX += xDiffPerParticle;
-          currentY += yDiffPerParticle;
-          currentZ += zDiffPerParticle;
-
-          // wait for the next particle to be drawn
-          try {
-            Thread.sleep((long) (1000 / (fastSpeedParticlesPerSecond * 100)));
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        }
-
-        // maintain the slow speed for the rest of the path
-        for (int j = 420; j < numberOfParticlesPerStarTravelTrack; j++) {
-          // get the current position of the particle
-          Pos currentPos = new Pos(currentX, currentY, currentZ);
-
-          // draw the particle, but for each do a little ball of particles to make it look like a star
-          // (bigger)
-          double starSize = 0.5;
-          for (int k = 0; k < 10; k++) {
-            // get a random angle
-            double randomAngle = Math.random() * 2 * Math.PI;
-            // get the difference in z and y coordinates between the center of the ship and the end of the beam (random radius)
-            double randomRadius = Math.random() * starSize;
-            double endingZDiff = Math.cos(randomAngle) * randomRadius;
-            double endingYDiff = Math.sin(randomAngle) * randomRadius;
-
-            drawParticle(
-                new Pos(currentPos.x(), currentPos.y() + endingYDiff, currentPos.z() + endingZDiff),
-                1);
-          }
-
-          // get the difference in x, y, and z coordinates between each particle in the beam
-          double xDiffPerParticle = xDiff / numberOfParticlesPerStarTravelTrack;
-          double yDiffPerParticle = yDiff / numberOfParticlesPerStarTravelTrack;
-          double zDiffPerParticle = zDiff / numberOfParticlesPerStarTravelTrack;
-
-          // get the current position of the particle
-          currentX += xDiffPerParticle;
-          currentY += yDiffPerParticle;
-          currentZ += zDiffPerParticle;
-
-          // wait for the next particle to be drawn
-          try {
-            Thread.sleep((long) (1000 / (slowSpeedBlocksPerSecond * 100)));
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        }
-      }).start();
     }
   }
 
@@ -463,11 +308,11 @@ public class SpaceShipSpace extends GameSpace {
   }
 
   /**
-   * Gets the ship's current position.
+   * Gets the ship reference.
    *
-   * @return the ship's current position
+   * @return the ship reference
    */
-  public SectorContainedPos getShipPosition() {
-    return this.spaceShipReference.getPosition();
+  public SectorSpaceShip getSpaceShipReference() {
+    return this.spaceShipReference;
   }
 }

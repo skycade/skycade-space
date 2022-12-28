@@ -13,19 +13,19 @@ import net.skycade.space.space.SpaceShipSpace;
 import net.skycade.space.space.SpaceShipSpaceConstants;
 
 /**
- * Represents a star in a sector.
+ * Represents a planet in a sector.
  */
-public class SectorStar extends PhysicsObject {
+public class SectorPlanet extends PhysicsObject {
 
   private final BigDecimal radius;
 
   /**
-   * Draws the star.
+   * Draws the planet.
    *
-   * @param position position of the star.
-   * @param radius   radius of the star.
+   * @param position position of the planet.
+   * @param radius   radius of the planet.
    */
-  public SectorStar(SectorContainedPos position, BigDecimal radius) {
+  public SectorPlanet(SectorContainedPos position, BigDecimal radius) {
     super(position);
     this.radius = radius;
   }
@@ -43,22 +43,22 @@ public class SectorStar extends PhysicsObject {
     SectorContainedPos shipRotation = space.getSpaceShipReference().getRotation();
 
     BigDecimal drawSphereRadius = SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS;
-    BigDecimal distanceFromShipToStar = this.getPosition().distance(shipPosition);
+    BigDecimal distanceFromShipToPlanet = this.getPosition().distance(shipPosition);
 
     // calculate the radius of the object on the surface of the 'draw sphere'
     BigDecimal radiusOnDrawSphere = this.radius.multiply(drawSphereRadius)
-        .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
+        .divide(distanceFromShipToPlanet, 10, RoundingMode.HALF_UP);
 
     // calculate the position of the object on the surface of the 'draw sphere'
     // remember, the position of the object is constrained to the SURFACE of the 'draw sphere'
     SectorContainedPos relativePosition = this.getPosition().sub(shipPosition);
 
     BigDecimal xOnDrawSphere = relativePosition.x().multiply(drawSphereRadius)
-        .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
+        .divide(distanceFromShipToPlanet, 10, RoundingMode.HALF_UP);
     BigDecimal yOnDrawSphere = relativePosition.y().multiply(drawSphereRadius)
-        .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
+        .divide(distanceFromShipToPlanet, 10, RoundingMode.HALF_UP);
     BigDecimal zOnDrawSphere = relativePosition.z().multiply(drawSphereRadius)
-        .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
+        .divide(distanceFromShipToPlanet, 10, RoundingMode.HALF_UP);
 
     // rotate everything on the surface of the 'draw sphere' by the rotation of the ship
     // this is so that the ship can rotate and the objects will rotate with it
@@ -109,53 +109,53 @@ public class SectorStar extends PhysicsObject {
     // now we have the position of the object on the surface of the 'draw sphere' and the radius
     // of the object on the surface of the 'draw sphere'
     // we can now draw the object
-    Pos starCenterInWorldAbsolute =
+    Pos planetCenterInWorldAbsolute =
         new Pos(xOnDrawSphereRoll.doubleValue(), yOnDrawSphereRoll.doubleValue(),
             zOnDrawSpherePitch.doubleValue());
-    Pos starCenterInWorldRelativeToCenterOfShip =
-        starCenterInWorldAbsolute.add(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP);
+    Pos planetCenterInWorldRelativeToCenterOfShip =
+        planetCenterInWorldAbsolute.add(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP);
 
-    // if the star in the sector is more than 1,000,000,000 meters away from the ship, just draw a
+    // if the planet in the sector is more than 1,000,000,000 meters away from the ship, just draw a
     // small dot/circle/whatever
-    if (distanceFromShipToStar.compareTo(new BigDecimal("1000000000")) > 0) {
-      drawNonRenderedStar(space, starCenterInWorldRelativeToCenterOfShip);
+    if (distanceFromShipToPlanet.compareTo(new BigDecimal("1000000000")) > 0) {
+      drawNonRenderedPlanet(space, planetCenterInWorldRelativeToCenterOfShip);
       return;
     }
 
-    // since we are drawing the star in the minecraft world, we need to provide the draw method
-    // with the x angle and y angle of the star on the surface of the 'draw sphere' from the
+    // since we are drawing the planet in the minecraft world, we need to provide the draw method
+    // with the x angle and y angle of the planet on the surface of the 'draw sphere' from the
     // perspective of the ship
-    double xAngle = Math.atan2(starCenterInWorldAbsolute.x(), starCenterInWorldAbsolute.z());
-    double yAngle = Math.atan2(starCenterInWorldAbsolute.y(), starCenterInWorldAbsolute.z());
+    double xAngle = Math.atan2(planetCenterInWorldAbsolute.x(), planetCenterInWorldAbsolute.z());
+    double yAngle = Math.atan2(planetCenterInWorldAbsolute.y(), planetCenterInWorldAbsolute.z());
 
-    drawStar(space, starCenterInWorldRelativeToCenterOfShip, radiusOnDrawSphere.doubleValue(),
+    drawPlanet(space, planetCenterInWorldRelativeToCenterOfShip, radiusOnDrawSphere.doubleValue(),
         xAngle, yAngle);
   }
 
-  private void drawNonRenderedStar(GameSpace space, Pos starCenterInWorld) {
+  private void drawNonRenderedPlanet(GameSpace space, Pos planetCenterInWorld) {
     // make a little circle of particles
     for (int i = 0; i < 5; i++) {
       getPredeterminedPointOnSphereSurfaceGivenIndex(5, i, 0.2);
       Pos particlePos =
-          getPredeterminedPointOnSphereSurfaceGivenIndex(5, i, 0.2).add(starCenterInWorld);
+          getPredeterminedPointOnSphereSurfaceGivenIndex(5, i, 0.2).add(planetCenterInWorld);
       drawParticle(space, particlePos);
     }
   }
 
   /**
-   * Draws a star in the minecraft world.
+   * Draws a planet in the minecraft world.
    *
    * @param space                           the game space
-   * @param starCenterInWorldRelativeToShip the center of the star in the minecraft world relative to the center of
+   * @param planetCenterInWorldRelativeToShip the center of the planet in the minecraft world relative to the center of
    *                                        the ship
-   * @param radiusOfStarOnDrawSphereSurface the radius of the star on the surface of the 'draw sphere'
-   * @param xAngle                          the x angle of the star on the surface of the 'draw sphere' from the
+   * @param radiusOfPlanetOnDrawSphereSurface the radius of the planet on the surface of the 'draw sphere'
+   * @param xAngle                          the x angle of the planet on the surface of the 'draw sphere' from the
    *                                        perspective of the ship
-   * @param yAngle                          the y angle of the star on the surface of the 'draw sphere' from the
+   * @param yAngle                          the y angle of the planet on the surface of the 'draw sphere' from the
    *                                        perspective of the ship
    */
-  private void drawStar(SpaceShipSpace space, Pos starCenterInWorldRelativeToShip,
-                        double radiusOfStarOnDrawSphereSurface, double xAngle, double yAngle) {
+  private void drawPlanet(SpaceShipSpace space, Pos planetCenterInWorldRelativeToShip,
+                        double radiusOfPlanetOnDrawSphereSurface, double xAngle, double yAngle) {
     int particleCount = 7000;
 
     // todo: use xAngle and yAngle to do perspective math and squash the 3D sphere
@@ -165,35 +165,35 @@ public class SectorStar extends PhysicsObject {
     // constrained on the SURFACE of the 'draw sphere'
 
     for (int i = 0; i < particleCount; i++) {
-      Pos pointOn3DStarAroundOrigin =
+      Pos pointOn3DPlanetAroundOrigin =
           getPredeterminedPointOnSphereSurfaceGivenIndex(particleCount, i,
-              radiusOfStarOnDrawSphereSurface);
+              radiusOfPlanetOnDrawSphereSurface);
 
-      // calculate the distance from the ship to the point on the 3D star surface
-      BigDecimal distanceFromShipToPointOn3DStarSurface = BigDecimal.valueOf(
-          pointOn3DStarAroundOrigin.add(starCenterInWorldRelativeToShip)
+      // calculate the distance from the ship to the point on the 3D planet surface
+      BigDecimal distanceFromShipToPointOn3DPlanetSurface = BigDecimal.valueOf(
+          pointOn3DPlanetAroundOrigin.add(planetCenterInWorldRelativeToShip)
               .distance(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP));
 
       // if the particle isn't visible from the ship, don't draw it
-      if (distanceFromShipToPointOn3DStarSurface.compareTo(
+      if (distanceFromShipToPointOn3DPlanetSurface.compareTo(
           SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS) > 0) {
         continue;
       }
 
-      // calculate the position of the particle on the 3D star that is centered around the surf
+      // calculate the position of the particle on the 3D planet that is centered around the surf
       // of the 'draw sphere'
-      BigDecimal xOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.x())
+      BigDecimal xOnDrawSphere = BigDecimal.valueOf(pointOn3DPlanetAroundOrigin.x())
           .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
-          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
-      BigDecimal yOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.y())
+          .divide(distanceFromShipToPointOn3DPlanetSurface, 10, RoundingMode.HALF_UP);
+      BigDecimal yOnDrawSphere = BigDecimal.valueOf(pointOn3DPlanetAroundOrigin.y())
           .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
-          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
-      BigDecimal zOnDrawSphere = BigDecimal.valueOf(pointOn3DStarAroundOrigin.z())
+          .divide(distanceFromShipToPointOn3DPlanetSurface, 10, RoundingMode.HALF_UP);
+      BigDecimal zOnDrawSphere = BigDecimal.valueOf(pointOn3DPlanetAroundOrigin.z())
           .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
-          .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
+          .divide(distanceFromShipToPointOn3DPlanetSurface, 10, RoundingMode.HALF_UP);
 
       Pos particlePos = new Pos(xOnDrawSphere.doubleValue(), yOnDrawSphere.doubleValue(),
-          zOnDrawSphere.doubleValue()).add(starCenterInWorldRelativeToShip);
+          zOnDrawSphere.doubleValue()).add(planetCenterInWorldRelativeToShip);
 
 
       drawParticle(space, particlePos);
@@ -219,7 +219,7 @@ public class SectorStar extends PhysicsObject {
   private void drawParticle(GameSpace space, Pos minecraftPos) {
     // todo: draw a particle at the given position.
     ParticlePacket particlePacket =
-        ParticleCreator.createParticlePacket(Particle.FIREWORK, minecraftPos.x(), minecraftPos.y(),
+        ParticleCreator.createParticlePacket(Particle.DUST, minecraftPos.x(), minecraftPos.y(),
             minecraftPos.z(), 0, 0, 0, 1);
     space.sendGroupedPacket(particlePacket);
   }
