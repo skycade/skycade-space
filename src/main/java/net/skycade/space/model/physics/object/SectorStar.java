@@ -115,21 +115,19 @@ public class SectorStar extends PhysicsObject {
     Pos starCenterInWorldRelativeToCenterOfShip =
         starCenterInWorldAbsolute.add(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP);
 
-    // if the star in the sector is more than 1,000,000,000 meters away from the ship, just draw a
+    // if the star in the sector is more than 10,000,000,000 meters away from the ship, just draw a
     // small dot/circle/whatever
-    if (distanceFromShipToStar.compareTo(new BigDecimal("1000000000")) > 0) {
+    if (distanceFromShipToStar.compareTo(new BigDecimal("10000000000")) > 0) {
       drawNonRenderedStar(space, starCenterInWorldRelativeToCenterOfShip);
       return;
     }
 
-    // since we are drawing the star in the minecraft world, we need to provide the draw method
-    // with the x angle and y angle of the star on the surface of the 'draw sphere' from the
-    // perspective of the ship
-    double xAngle = Math.atan2(starCenterInWorldAbsolute.x(), starCenterInWorldAbsolute.z());
-    double yAngle = Math.atan2(starCenterInWorldAbsolute.y(), starCenterInWorldAbsolute.z());
+    drawStar(space, starCenterInWorldRelativeToCenterOfShip, radiusOnDrawSphere.doubleValue());
+  }
 
-    drawStar(space, starCenterInWorldRelativeToCenterOfShip, radiusOnDrawSphere.doubleValue(),
-        xAngle, yAngle);
+  @Override
+  public void tickCustomPhysics() {
+    // no-op
   }
 
   private void drawNonRenderedStar(GameSpace space, Pos starCenterInWorld) {
@@ -149,17 +147,10 @@ public class SectorStar extends PhysicsObject {
    * @param starCenterInWorldRelativeToShip the center of the star in the minecraft world relative to the center of
    *                                        the ship
    * @param radiusOfStarOnDrawSphereSurface the radius of the star on the surface of the 'draw sphere'
-   * @param xAngle                          the x angle of the star on the surface of the 'draw sphere' from the
-   *                                        perspective of the ship
-   * @param yAngle                          the y angle of the star on the surface of the 'draw sphere' from the
-   *                                        perspective of the ship
    */
   private void drawStar(SpaceShipSpace space, Pos starCenterInWorldRelativeToShip,
-                        double radiusOfStarOnDrawSphereSurface, double xAngle, double yAngle) {
+                        double radiusOfStarOnDrawSphereSurface) {
     int particleCount = 7000;
-
-    // todo: use xAngle and yAngle to do perspective math and squash the 3D sphere
-    // into a 2D circle that matches perspective of the ship (even with changing distance)
 
     // now we draw a 3D sphere out of particles, but we have to squeeze it into a 2D circle
     // constrained on the SURFACE of the 'draw sphere'
@@ -192,11 +183,19 @@ public class SectorStar extends PhysicsObject {
           .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
           .divide(distanceFromShipToPointOn3DStarSurface, 10, RoundingMode.HALF_UP);
 
+      // this particle position is in 3D relative to the surface of the 'draw sphere' (pops out)
       Pos particlePos = new Pos(xOnDrawSphere.doubleValue(), yOnDrawSphere.doubleValue(),
           zOnDrawSphere.doubleValue()).add(starCenterInWorldRelativeToShip);
+      // this particle position is in 2D relative to the surface of the 'draw sphere' (squished)
+      Pos radiusBoundParticlePos =
+          particlePos.mul(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS.doubleValue())
+              .div(particlePos.distance(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP));
 
+//      Pos particlePos = new Pos(xOnDrawSphereAdjusted.doubleValue(),
+//          yOnDrawSphereAdjusted.doubleValue(), zOnDrawSphereAdjusted.doubleValue())
+//          .add(starCenterInWorldRelativeToShip);
 
-      drawParticle(space, particlePos);
+      drawParticle(space, radiusBoundParticlePos);
     }
   }
 

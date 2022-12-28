@@ -21,7 +21,6 @@ import net.skycade.space.model.distance.LightYear;
 import net.skycade.space.model.physics.object.SectorPlanet;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
-import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.model.sector.Sector;
 import net.skycade.space.model.sector.contained.SectorContainedObject;
 import net.skycade.space.model.sector.contained.SectorSpaceShip;
@@ -163,7 +162,6 @@ public class SpaceShipSpace extends GameSpace {
   }
 
   private void runJoinTasks() {
-    // do hyperspace animation for 2 seconds then star rendering the sector
     Task task1 = scheduler().buildTask(() -> {
       try {
         drawHyperSpeedLines();
@@ -186,14 +184,21 @@ public class SpaceShipSpace extends GameSpace {
         }
         // tick physics for the spaceship
         this.spaceShipReference.tickPhysics();
+        System.out.println(
+            "this.spaceShipReference.getVelocity() = " + this.spaceShipReference.getVelocity());
       }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS)).schedule();
 
       scheduler().buildTask(() -> {
-        this.spaceShipReference.setAngularVelocity(
-            new SectorContainedVec(BigDecimal.ZERO, new BigDecimal(Math.PI / 500),
-                BigDecimal.ZERO));
-      }).delay(Duration.ofSeconds(2)).schedule();
-    }).delay(Duration.ofSeconds(3)).schedule();
+        this.spaceShipReference.setRotation(new SectorContainedPos(
+            BigDecimal.ZERO,
+            BigDecimal.ONE,
+            BigDecimal.ZERO));
+        scheduler().buildTask(() -> {
+          this.spaceShipReference.thrustForward(new BigDecimal("10000"), 5, this);
+        }).schedule();
+      }).delay(Duration.ofSeconds(1)).schedule();
+
+    }).delay(Duration.ofSeconds(1)).schedule();
   }
 
 
@@ -272,7 +277,7 @@ public class SpaceShipSpace extends GameSpace {
       }).start();
 
       // stagger the beams, so they don't all start at the same time
-      Thread.sleep(50);
+      Thread.sleep(25);
     }
   }
 

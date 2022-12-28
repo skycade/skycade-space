@@ -19,6 +19,7 @@ repositories {
 dependencies {
     implementation files('libs/skycade-server-runtime-1.0.0-SNAPSHOT.jar')
     implementation files('libs/NBStom-1.0.0.jar')
+    implementation 'ch.obermuhlner:big-math:2.3.2'
 }
 
 shadowJar {

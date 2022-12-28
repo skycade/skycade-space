@@ -9,6 +9,7 @@ import net.minestom.server.particle.ParticleCreator;
 import net.skycade.serverruntime.api.space.GameSpace;
 import net.skycade.space.model.physics.PhysicsObject;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
+import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.space.SpaceShipSpace;
 import net.skycade.space.space.SpaceShipSpaceConstants;
 
@@ -115,21 +116,19 @@ public class SectorPlanet extends PhysicsObject {
     Pos planetCenterInWorldRelativeToCenterOfShip =
         planetCenterInWorldAbsolute.add(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP);
 
-    // if the planet in the sector is more than 1,000,000,000 meters away from the ship, just draw a
+    // if the planet in the sector is more than 10,000,000,000 meters away from the ship, just draw a
     // small dot/circle/whatever
-    if (distanceFromShipToPlanet.compareTo(new BigDecimal("1000000000")) > 0) {
+    if (distanceFromShipToPlanet.compareTo(new BigDecimal("10000000000")) > 0) {
       drawNonRenderedPlanet(space, planetCenterInWorldRelativeToCenterOfShip);
       return;
     }
 
-    // since we are drawing the planet in the minecraft world, we need to provide the draw method
-    // with the x angle and y angle of the planet on the surface of the 'draw sphere' from the
-    // perspective of the ship
-    double xAngle = Math.atan2(planetCenterInWorldAbsolute.x(), planetCenterInWorldAbsolute.z());
-    double yAngle = Math.atan2(planetCenterInWorldAbsolute.y(), planetCenterInWorldAbsolute.z());
+    drawPlanet(space, planetCenterInWorldRelativeToCenterOfShip, radiusOnDrawSphere.doubleValue());
+  }
 
-    drawPlanet(space, planetCenterInWorldRelativeToCenterOfShip, radiusOnDrawSphere.doubleValue(),
-        xAngle, yAngle);
+  @Override
+  public void tickCustomPhysics() {
+    // no-op
   }
 
   private void drawNonRenderedPlanet(GameSpace space, Pos planetCenterInWorld) {
@@ -145,21 +144,14 @@ public class SectorPlanet extends PhysicsObject {
   /**
    * Draws a planet in the minecraft world.
    *
-   * @param space                           the game space
+   * @param space                             the game space
    * @param planetCenterInWorldRelativeToShip the center of the planet in the minecraft world relative to the center of
-   *                                        the ship
+   *                                          the ship
    * @param radiusOfPlanetOnDrawSphereSurface the radius of the planet on the surface of the 'draw sphere'
-   * @param xAngle                          the x angle of the planet on the surface of the 'draw sphere' from the
-   *                                        perspective of the ship
-   * @param yAngle                          the y angle of the planet on the surface of the 'draw sphere' from the
-   *                                        perspective of the ship
    */
   private void drawPlanet(SpaceShipSpace space, Pos planetCenterInWorldRelativeToShip,
-                        double radiusOfPlanetOnDrawSphereSurface, double xAngle, double yAngle) {
+                          double radiusOfPlanetOnDrawSphereSurface) {
     int particleCount = 7000;
-
-    // todo: use xAngle and yAngle to do perspective math and squash the 3D sphere
-    // into a 2D circle that matches perspective of the ship (even with changing distance)
 
     // now we draw a 3D sphere out of particles, but we have to squeeze it into a 2D circle
     // constrained on the SURFACE of the 'draw sphere'
@@ -192,11 +184,19 @@ public class SectorPlanet extends PhysicsObject {
           .multiply(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS)
           .divide(distanceFromShipToPointOn3DPlanetSurface, 10, RoundingMode.HALF_UP);
 
+      // this particle position is in 3D relative to the surface of the 'draw sphere' (pops out)
       Pos particlePos = new Pos(xOnDrawSphere.doubleValue(), yOnDrawSphere.doubleValue(),
           zOnDrawSphere.doubleValue()).add(planetCenterInWorldRelativeToShip);
+      // this particle position is in 2D relative to the surface of the 'draw sphere' (squished)
+      Pos radiusBoundParticlePos =
+          particlePos.mul(SpaceShipSpaceConstants.DRAW_ON_CIRCLE_RADIUS.doubleValue())
+              .div(particlePos.distance(SpaceShipSpaceConstants.THEORETICAL_CENTER_OF_SHIP));
 
+//      Pos particlePos = new Pos(xOnDrawSphereAdjusted.doubleValue(),
+//          yOnDrawSphereAdjusted.doubleValue(), zOnDrawSphereAdjusted.doubleValue())
+//          .add(planetCenterInWorldRelativeToShip);
 
-      drawParticle(space, particlePos);
+      drawParticle(space, radiusBoundParticlePos);
     }
   }
 

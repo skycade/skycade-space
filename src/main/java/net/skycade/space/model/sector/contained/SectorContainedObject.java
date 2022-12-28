@@ -207,10 +207,17 @@ public abstract class SectorContainedObject {
   public abstract void draw(SpaceShipSpace space);
 
   /**
+   * Updates the object's physics using custom rules.
+   */
+  public abstract void tickCustomPhysics();
+
+  /**
    * Update the object's position based on its velocity and acceleration.
    */
   public void tickPhysics() {
-    Long physicsTickDelayMillis = PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS;
+    this.tickCustomPhysics();
+
+    long physicsTickDelayMillis = PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS;
 
     // tick the physics to be constant to meters per second using the physics tick delay
     // as the time between ticks and "meters/second" as the unit of velocity
