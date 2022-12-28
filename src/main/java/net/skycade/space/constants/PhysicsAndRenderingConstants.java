@@ -10,7 +10,13 @@ package net.skycade.space.constants;
  */
 public class PhysicsAndRenderingConstants {
 
-  public static final Long RENDER_DELAY_MILLIS = 50L;
+  /**
+   * The delay between each rendering tick, in milliseconds.
+   */
+  public static final Long RENDER_DELAY_MILLIS = 20L;
 
-  public static final Long PHYSICS_DELAY_MILLIS = 50L;
+  /**
+   * The delay between each physics tick, in milliseconds.
+   */
+  public static final Long PHYSICS_DELAY_MILLIS = 20L;
 }

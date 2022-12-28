@@ -192,10 +192,10 @@ public class SpaceShipSpace extends GameSpace {
         this.spaceShipReference.setAngularVelocity(
             new SectorContainedVec(BigDecimal.ZERO, BigDecimal.valueOf(Math.PI / 200),
                 BigDecimal.ZERO));
+        this.spaceShipReference.thrustForward(new BigDecimal("10000"), 5, this);
         scheduler().buildTask(() -> {
           this.spaceShipReference.setAngularVelocity(
               new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-          this.spaceShipReference.thrustForward(new BigDecimal("10000"), 5, this);
         }).delay(Duration.ofSeconds(2)).schedule();
       }).delay(Duration.ofSeconds(1)).schedule();
 
