@@ -20,6 +20,7 @@ import net.skycade.space.model.dimension.SpaceDimension;
 import net.skycade.space.model.distance.LightYear;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
+import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.model.sector.Sector;
 import net.skycade.space.model.sector.contained.SectorContainedObject;
 import net.skycade.space.model.sector.contained.SectorSpaceShip;
@@ -168,7 +169,7 @@ public class SpaceShipSpace extends GameSpace {
 
     scheduler().buildTask(sectorRenderer::render)
         .repeat(Duration.ofMillis(PhysicsAndRenderingConstants.RENDER_DELAY_MILLIS))
-        .delay(Duration.ofSeconds(2)).executionType(ExecutionType.SYNC).schedule();
+        .executionType(ExecutionType.SYNC).schedule();
 
     scheduler().buildTask(() -> {
           for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
@@ -176,7 +177,21 @@ public class SpaceShipSpace extends GameSpace {
           }
           this.spaceShipReference.tickPhysics();
         }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
-        .delay(Duration.ofSeconds(2)).executionType(ExecutionType.SYNC).schedule();
+        .executionType(ExecutionType.SYNC).schedule();
+
+    scheduler().buildTask(() -> {
+      this.spaceShipReference.thrustForward(new BigDecimal("5000"), 3, this);
+    }).schedule();
+
+    scheduler().buildTask(() -> {
+      this.spaceShipReference.setAngularVelocity(
+          new SectorContainedVec(new BigDecimal(Math.PI / 3100), new BigDecimal(Math.PI / 1000), BigDecimal.ZERO));
+    }).delay(Duration.ofSeconds(1)).schedule();
+
+    scheduler().buildTask(() -> {
+      this.spaceShipReference.setAngularVelocity(
+          new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+    }).delay(Duration.ofSeconds(5)).schedule();
   }
 
 
