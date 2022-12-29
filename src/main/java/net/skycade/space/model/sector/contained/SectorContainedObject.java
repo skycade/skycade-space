@@ -2,6 +2,7 @@ package net.skycade.space.model.sector.contained;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import net.minestom.server.coordinate.Pos;
 import net.skycade.space.constants.PhysicsAndRenderingConstants;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
 import net.skycade.space.model.physics.vector.SectorContainedVec;
@@ -200,11 +201,14 @@ public abstract class SectorContainedObject {
   }
 
   /**
-   * Draw the object.
+   * Calculates the positions of points on the object positioned absolutely on the
+   * draw circle radius, but in 3D space.
    *
-   * @param space the spaceship space.
+   * @param space                                     the spaceship space.
+   * @param absoluteDrawSphereRadiusBoundObjectCenter the absolute draw sphere radius bound object center position.
+   * @return the positions of points on the object positioned absolutely on the draw circle radius, but in 3D space
    */
-  public abstract void draw(SpaceShipSpace space);
+  public abstract Pos[] draw(SpaceShipSpace space, Pos absoluteDrawSphereRadiusBoundObjectCenter);
 
   /**
    * Updates the object's physics using custom rules.

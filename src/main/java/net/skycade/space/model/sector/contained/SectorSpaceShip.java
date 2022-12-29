@@ -3,6 +3,7 @@ package net.skycade.space.model.sector.contained;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
+import net.minestom.server.coordinate.Pos;
 import net.minestom.server.timer.Task;
 import net.skycade.space.constants.PhysicsAndRenderingConstants;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
@@ -39,8 +40,9 @@ public class SectorSpaceShip extends SectorContainedObject {
   }
 
   @Override
-  public void draw(SpaceShipSpace space) {
+  public Pos[] draw(SpaceShipSpace space, Pos absoluteDrawSphereRadiusBoundObjectCenter) {
     // no-op, it's drawn using blocks already.
+    return new Pos[0];
   }
 
   @Override

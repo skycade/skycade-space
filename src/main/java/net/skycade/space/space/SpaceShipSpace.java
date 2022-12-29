@@ -14,15 +14,12 @@ import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.timer.ExecutionType;
-import net.minestom.server.timer.Task;
 import net.skycade.serverruntime.api.space.GameSpace;
 import net.skycade.space.constants.PhysicsAndRenderingConstants;
 import net.skycade.space.model.dimension.SpaceDimension;
 import net.skycade.space.model.distance.LightYear;
-import net.skycade.space.model.physics.object.SectorPlanet;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
-import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.model.sector.Sector;
 import net.skycade.space.model.sector.contained.SectorContainedObject;
 import net.skycade.space.model.sector.contained.SectorSpaceShip;
@@ -74,7 +71,7 @@ public class SpaceShipSpace extends GameSpace {
     this.sectorRenderer = new SectorRenderer(this);
     this.sector = new PredefinedEmptySpaceSector();
     this.spaceShipReference = new SectorSpaceShip(
-        new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("9461000000000000000")));
+        new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
   }
 
   @Override
@@ -85,7 +82,7 @@ public class SpaceShipSpace extends GameSpace {
     this.instanceBoundPlayerEventNode().addListener(PlayerSpawnEvent.class, event -> {
       event.getPlayer().setRespawnPoint(SpaceShipSpaceConstants.SPAWN_POSITION);
       event.getPlayer().teleport(SpaceShipSpaceConstants.SPAWN_POSITION);
-      event.getPlayer().setGameMode(GameMode.ADVENTURE);
+      event.getPlayer().setGameMode(GameMode.SPECTATOR);
 
       scheduleNextTick((i) -> {
         runJoinTasks();
@@ -112,15 +109,9 @@ public class SpaceShipSpace extends GameSpace {
               new BigDecimal("-44400000"));
       SectorStar secondStar = new SectorStar(secondStarPos, new BigDecimal("2737400"));
 
-      SectorContainedPos planetPos =
-          new SectorContainedPos(new BigDecimal("44400000"), BigDecimal.ZERO,
-              new BigDecimal("-54400000"));
-      SectorPlanet planet = new SectorPlanet(planetPos, new BigDecimal("5737400"));
-
       // add the star to the sector
       this.sector.addContainedObject(star);
       this.sector.addContainedObject(secondStar);
-      this.sector.addContainedObject(planet);
 
       // add 400 random small stars around the spaceship
       for (int i = 0; i < 200; i++) {
@@ -186,12 +177,6 @@ public class SpaceShipSpace extends GameSpace {
           this.spaceShipReference.tickPhysics();
         }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
         .delay(Duration.ofSeconds(2)).executionType(ExecutionType.SYNC).schedule();
-
-    scheduler().buildTask(() -> {
-      this.spaceShipReference.setAcceleration(
-          new SectorContainedVec(BigDecimal.ZERO,
-              BigDecimal.ZERO, new BigDecimal("-9461000000000000000")));
-    }).delay(Duration.ofSeconds(2)).executionType(ExecutionType.SYNC).schedule();
   }
 
 
