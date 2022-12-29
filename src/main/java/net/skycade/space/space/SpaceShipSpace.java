@@ -22,7 +22,9 @@ import net.skycade.space.model.dimension.SpaceDimension;
 import net.skycade.space.model.distance.LightYear;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
+import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.model.sector.Sector;
+import net.skycade.space.model.sector.contained.SectorContainedObject;
 import net.skycade.space.model.sector.contained.SectorSpaceShip;
 import net.skycade.space.renderer.SectorRenderer;
 import net.skycade.space.sector.PredefinedEmptySpaceSector;
@@ -94,24 +96,6 @@ public class SpaceShipSpace extends GameSpace {
         runJoinTasks();
       });
     });
-
-    eventNode().addListener(InstanceTickEvent.class, event -> {
-      // get the time since the last tick
-      long timeSinceLastTick = System.currentTimeMillis() - lastTick;
-      lastTick = System.currentTimeMillis();
-
-      if (timeSinceLastTick == 0) {
-        return;
-      }
-
-      System.out.println("Ticks per second: " + (1000 / timeSinceLastTick));
-    });
-
-    this.instanceBoundPlayerEventNode().addListener(PlayerDisconnectEvent.class, event -> {
-      System.err.println("Player disconnected from the server. Time spent: " + Duration.ofMillis(System.currentTimeMillis() - playerJoinTime));
-      System.exit(0);
-    });
-
 
     // top down view:
     // forwards: -z
@@ -191,15 +175,15 @@ public class SpaceShipSpace extends GameSpace {
 //
     scheduler().buildTask(sectorRenderer::render)
         .repeat(Duration.ofMillis(PhysicsAndRenderingConstants.RENDER_DELAY_MILLIS))
-        .executionType(ExecutionType.ASYNC).schedule();
-//
-//    scheduler().buildTask(() -> {
-//          for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
-//            containedObject.tickPhysics();
-//          }
-//          this.spaceShipReference.tickPhysics();
-//        }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
-//        .executionType(ExecutionType.SYNC).schedule();
+        .executionType(ExecutionType.SYNC).schedule();
+
+    scheduler().buildTask(() -> {
+          for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
+            containedObject.tickPhysics();
+          }
+          this.spaceShipReference.tickPhysics();
+        }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
+        .executionType(ExecutionType.SYNC).schedule();
 //
 //    scheduler().buildTask(() -> {
 //      this.spaceShipReference.thrustForward(new BigDecimal("5000"), 3, this);

@@ -3,8 +3,6 @@ package net.skycade.space.renderer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -29,8 +27,6 @@ public class SectorRenderer {
    * which is only possible in a....spaceship. Wow, I'm so smart.
    */
   private final SpaceShipSpace space;
-
-  private static final long MAX_PARTICLES_PER_RENDER = 1000;
 
   /**
    * Constructs a new sector renderer.
@@ -57,20 +53,18 @@ public class SectorRenderer {
       Pos absoluteDrawSphereRadiusBoundObjectCenter =
           transformUniverseObjectPositionCenterToDrawSphereAbsolutePosition(object.getPosition());
       Pos[] positions = object.draw(space, absoluteDrawSphereRadiusBoundObjectCenter);
-      particles.addAll(Arrays.asList(positions));
+      particles.addAll(List.of(positions));
     }
 
-    // shuffle the particles so that they're not rendered in a specific order.
-    Collections.shuffle(particles);
+    for (int i = 0; i < particles.size(); i++) {
+      // if it's the last particle and less than 4,000 have been sent, send the rest.
+      if (i == particles.size() - 1 && i < 4000) {
+        int remaining = 4000 - i;
+        drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particles.get(i)), remaining);
+        break;
+      }
 
-    // remove particles that are over the limit.
-    if (particles.size() > MAX_PARTICLES_PER_RENDER) {
-      particles = particles.subList(0, (int) MAX_PARTICLES_PER_RENDER);
-    }
-
-    // render the particles.
-    for (Pos particle : particles) {
-      drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle));
+      drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particles.get(i)), 2);
     }
   }
 
@@ -126,12 +120,13 @@ public class SectorRenderer {
    *
    * @param space        the space to draw the particle in.
    * @param minecraftPos the position to draw the particle at.
+   * @param count        the amount of particles to draw.
    */
-  private void drawParticle(GameSpace space, Pos minecraftPos) {
+  private void drawParticle(GameSpace space, Pos minecraftPos, int count) {
     // todo: draw a particle at the given position.
     ParticlePacket particlePacket =
         ParticleCreator.createParticlePacket(Particle.FIREWORK, minecraftPos.x(), minecraftPos.y(),
-            minecraftPos.z(), 0, 0, 0, 1);
+            minecraftPos.z(), 0, 0, 0, count);
     space.sendGroupedPacket(particlePacket);
   }
 
