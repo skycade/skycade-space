@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.UUID;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
+import net.minestom.server.event.instance.InstanceTickEvent;
+import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.AnvilLoader;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -20,9 +22,7 @@ import net.skycade.space.model.dimension.SpaceDimension;
 import net.skycade.space.model.distance.LightYear;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
-import net.skycade.space.model.physics.vector.SectorContainedVec;
 import net.skycade.space.model.sector.Sector;
-import net.skycade.space.model.sector.contained.SectorContainedObject;
 import net.skycade.space.model.sector.contained.SectorSpaceShip;
 import net.skycade.space.renderer.SectorRenderer;
 import net.skycade.space.sector.PredefinedEmptySpaceSector;
@@ -75,6 +75,9 @@ public class SpaceShipSpace extends GameSpace {
         new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
   }
 
+  private long lastTick = System.currentTimeMillis();
+  private long playerJoinTime = -1;
+
   @Override
   public void init() {
     setChunkLoader(new AnvilLoader(Path.of("spaceship-space")));
@@ -85,9 +88,28 @@ public class SpaceShipSpace extends GameSpace {
       event.getPlayer().teleport(SpaceShipSpaceConstants.SPAWN_POSITION);
       event.getPlayer().setGameMode(GameMode.SPECTATOR);
 
+      playerJoinTime = System.currentTimeMillis();
+
       scheduleNextTick((i) -> {
         runJoinTasks();
       });
+    });
+
+    eventNode().addListener(InstanceTickEvent.class, event -> {
+      // get the time since the last tick
+      long timeSinceLastTick = System.currentTimeMillis() - lastTick;
+      lastTick = System.currentTimeMillis();
+
+      if (timeSinceLastTick == 0) {
+        return;
+      }
+
+      System.out.println("Ticks per second: " + (1000 / timeSinceLastTick));
+    });
+
+    this.instanceBoundPlayerEventNode().addListener(PlayerDisconnectEvent.class, event -> {
+      System.err.println("Player disconnected from the server. Time spent: " + Duration.ofMillis(System.currentTimeMillis() - playerJoinTime));
+      System.exit(0);
     });
 
 
@@ -166,32 +188,32 @@ public class SpaceShipSpace extends GameSpace {
 //
 //    // cancel the previous task
 //    scheduler().buildTask(task1::cancel).delay(Duration.ofSeconds(3)).schedule();
-
+//
     scheduler().buildTask(sectorRenderer::render)
         .repeat(Duration.ofMillis(PhysicsAndRenderingConstants.RENDER_DELAY_MILLIS))
-        .executionType(ExecutionType.SYNC).schedule();
-
-    scheduler().buildTask(() -> {
-          for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
-            containedObject.tickPhysics();
-          }
-          this.spaceShipReference.tickPhysics();
-        }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
-        .executionType(ExecutionType.SYNC).schedule();
-
-    scheduler().buildTask(() -> {
-      this.spaceShipReference.thrustForward(new BigDecimal("5000"), 3, this);
-    }).schedule();
-
-    scheduler().buildTask(() -> {
-      this.spaceShipReference.setAngularVelocity(
-          new SectorContainedVec(new BigDecimal(Math.PI / 3100), new BigDecimal(Math.PI / 1000), BigDecimal.ZERO));
-    }).delay(Duration.ofSeconds(1)).schedule();
-
-    scheduler().buildTask(() -> {
-      this.spaceShipReference.setAngularVelocity(
-          new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-    }).delay(Duration.ofSeconds(5)).schedule();
+        .executionType(ExecutionType.ASYNC).schedule();
+//
+//    scheduler().buildTask(() -> {
+//          for (SectorContainedObject containedObject : this.sector.getContainedObjects()) {
+//            containedObject.tickPhysics();
+//          }
+//          this.spaceShipReference.tickPhysics();
+//        }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
+//        .executionType(ExecutionType.SYNC).schedule();
+//
+//    scheduler().buildTask(() -> {
+//      this.spaceShipReference.thrustForward(new BigDecimal("5000"), 3, this);
+//    }).schedule();
+//
+//    scheduler().buildTask(() -> {
+//      this.spaceShipReference.setAngularVelocity(
+//          new SectorContainedVec(new BigDecimal(Math.PI / 3100), new BigDecimal(Math.PI / 1000), BigDecimal.ZERO));
+//    }).delay(Duration.ofSeconds(1)).schedule();
+//
+//    scheduler().buildTask(() -> {
+//      this.spaceShipReference.setAngularVelocity(
+//          new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+//    }).delay(Duration.ofSeconds(5)).schedule();
   }
 
 

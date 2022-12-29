@@ -2,6 +2,10 @@ package net.skycade.space.renderer;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
@@ -26,6 +30,8 @@ public class SectorRenderer {
    */
   private final SpaceShipSpace space;
 
+  private static final long MAX_PARTICLES_PER_RENDER = 1000;
+
   /**
    * Constructs a new sector renderer.
    *
@@ -39,6 +45,7 @@ public class SectorRenderer {
    * Renders the sector around the spaceship.
    */
   public void render() {
+    List<Pos> particles = new ArrayList<>();
     // loop through all the sectors objects in the sector
     // and render them.
     for (SectorContainedObject object : space.getSector().getContainedObjects()) {
@@ -47,12 +54,23 @@ public class SectorRenderer {
         // don't render the ship.
         continue;
       }
-      Pos absoluteDrawSphereRadiusBoundObjectCenter = transformUniverseObjectPositionCenterToDrawSphereAbsolutePosition(object.getPosition());
+      Pos absoluteDrawSphereRadiusBoundObjectCenter =
+          transformUniverseObjectPositionCenterToDrawSphereAbsolutePosition(object.getPosition());
       Pos[] positions = object.draw(space, absoluteDrawSphereRadiusBoundObjectCenter);
+      particles.addAll(Arrays.asList(positions));
+    }
 
-      for (Pos position : positions) {
-        drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(position));
-      }
+    // shuffle the particles so that they're not rendered in a specific order.
+    Collections.shuffle(particles);
+
+    // remove particles that are over the limit.
+    if (particles.size() > MAX_PARTICLES_PER_RENDER) {
+      particles = particles.subList(0, (int) MAX_PARTICLES_PER_RENDER);
+    }
+
+    // render the particles.
+    for (Pos particle : particles) {
+      drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle));
     }
   }
 
@@ -149,7 +167,7 @@ public class SectorRenderer {
         .divide(distanceFromShipToStar, 10, RoundingMode.HALF_UP);
 
     // rotate everything on the surface of the 'draw sphere' by the rotation of the ship
-    // this is so that the ship can rotate and the objects will rotate with it
+    // this is so that the ship can rotate and the objects will rotate with it,
     // we need trigonometry for this since we will use yaw, pitch and roll
     // top-down view:
     // forwards: -z

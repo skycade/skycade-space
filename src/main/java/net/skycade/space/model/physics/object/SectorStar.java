@@ -95,7 +95,7 @@ public class SectorStar extends PhysicsObject {
   private List<Pos> calculateParticlePositions3DBoundToDrawCircleRadius(SpaceShipSpace space,
                                                                         Pos starCenterInWorldRelativeToShip,
                                                                         double radiusOfStarOnDrawSphereSurface) {
-    int particleCount = 3000;
+    int particleCount = 10000;
 
     // we need to generate a list of particle positions that are bound to the 'draw sphere'
     // (we are given the center of the object for reference)
