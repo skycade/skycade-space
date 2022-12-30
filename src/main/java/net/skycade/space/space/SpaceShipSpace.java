@@ -87,7 +87,7 @@ public class SpaceShipSpace extends GameSpace {
     this.instanceBoundPlayerEventNode().addListener(PlayerSpawnEvent.class, event -> {
       event.getPlayer().setRespawnPoint(SpaceShipSpaceConstants.SPAWN_POSITION);
       event.getPlayer().teleport(SpaceShipSpaceConstants.SPAWN_POSITION);
-      event.getPlayer().setGameMode(GameMode.SURVIVAL);
+      event.getPlayer().setGameMode(GameMode.SPECTATOR);
 
       playerJoinTime = System.currentTimeMillis();
 
@@ -144,7 +144,6 @@ public class SpaceShipSpace extends GameSpace {
     return number.toString();
   }
 
-
   private double random(double min, double max) {
     return min + Math.random() * (max - min);
   }
@@ -198,10 +197,10 @@ public class SpaceShipSpace extends GameSpace {
             new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
         this.spaceShipReference.setVelocity(
             new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-        this.spaceShipReference.thrustForward(new BigDecimal("500"), 10, this);
-        this.spaceShipReference.setAngularVelocity(
-            new SectorContainedVec(new BigDecimal(Math.PI / -2000), BigDecimal.ZERO,
-                BigDecimal.ZERO));
+        this.spaceShipReference.thrustForward(new BigDecimal("50000000"), 30, this);
+//        this.spaceShipReference.setAngularVelocity(
+//            new SectorContainedVec(new BigDecimal(Math.PI / 2000), new BigDecimal(Math.PI / 2000),
+//                BigDecimal.ZERO));
       }).delay(Duration.ofSeconds(6)).schedule();
 
     }).delay(Duration.ofSeconds(3)).schedule();

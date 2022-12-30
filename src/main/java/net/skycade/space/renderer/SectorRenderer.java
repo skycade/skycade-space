@@ -134,9 +134,8 @@ public class SectorRenderer {
    * @param count        the amount of particles to draw.
    */
   private void drawParticle(GameSpace space, Pos minecraftPos, int count) {
-    // todo: draw a particle at the given position.
     ParticlePacket particlePacket =
-        ParticleCreator.createParticlePacket(Particle.FIREWORK, minecraftPos.x(), minecraftPos.y(),
+        ParticleCreator.createParticlePacket(Particle.CRIT, minecraftPos.x(), minecraftPos.y(),
             minecraftPos.z(), 0, 0, 0, count);
     space.sendGroupedPacket(particlePacket);
   }
