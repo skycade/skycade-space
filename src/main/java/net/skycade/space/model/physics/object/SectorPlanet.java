@@ -62,7 +62,8 @@ public class SectorPlanet extends PhysicsObject {
 
     return calculateParticlePositions3DBoundToDrawCircleRadius(space,
         planetCenterInWorldRelativeToCenterOfShip,
-        radiusOfObjectOnDrawSphere.doubleValue()).toArray(new Pos[0]);
+        radiusOfObjectOnDrawSphere.doubleValue()).toArray(
+        new Pos[0]);
   }
 
   @Override
@@ -76,12 +77,75 @@ public class SectorPlanet extends PhysicsObject {
 
     // if the velocity is greater than the speed of light,
     // draw "hyperspace" lines in the direction of the ship's velocity
-    if (shipVelocity.compareTo(new BigDecimal("299792458")) > 0) {
+    if (shipVelocity.compareTo(new BigDecimal("10792458")) > 0) {
       // todo: generate a line that is scaled based on the velocity of the ship
-      return Collections.emptyList();
+      return calculateParticlePositionsHyperspace3DBoundToDrawCircleRadius(space,
+          planetCenterInWorld);
     }
 
     return Collections.singletonList(planetCenterInWorld);
+  }
+
+  /**
+   * Calculates the positions of the particles that make up the planet in hyperspace.
+   *
+   * @param space               space to draw the planet in.
+   * @param planetCenterInWorld center of the planet in the world.
+   * @return the positions of the particles that make up the planet.
+   */
+  private List<Pos> calculateParticlePositionsHyperspace3DBoundToDrawCircleRadius(
+      SpaceShipSpace space, Pos planetCenterInWorld) {
+    List<Pos> positions = new ArrayList<>();
+    // the ship's velocity
+    BigDecimal shipVelocity = space.getSpaceShipReference().getVelocity().length();
+    // theta = vertical angle
+    BigDecimal theta = space.getSpaceShipReference().getVelocity().theta();
+    // phi = horizontal angle
+    BigDecimal phi = space.getSpaceShipReference().getVelocity().phi();
+
+    // calculate the length of the line based on the velocity of the ship
+    // e.g., speed of light = line length of 10 meters
+    BigDecimal length = shipVelocity.multiply(new BigDecimal("10"))
+        .divide(new BigDecimal("299792458"), 10, RoundingMode.HALF_UP);
+
+    // max length 15
+    if (length.compareTo(new BigDecimal("20")) > 0) {
+      length = new BigDecimal("20");
+    }
+
+    // calculate the particle count based on the length of the line
+    int particleCount = length.divide(new BigDecimal("0.2"), 10, RoundingMode.HALF_UP).intValue();
+    for (int i = 0; i < particleCount; i++) {
+      // calculate the position of the particle
+      // create a line in the direction of the ship's velocity
+      double delta = (double) i / particleCount;
+
+      // now calculate the x, y, and z coordinates of the particle
+      // that draw a line going in the direction of the ship's velocity
+      // keep in mind:
+      // top-down view:
+      // forwards: -z
+      //       -z
+      //       |
+      // -x  ------ +x
+      //       |
+      //       +z
+      //
+
+      double x = planetCenterInWorld.x() +
+          length.doubleValue() * Math.sin(theta.doubleValue()) * Math.cos(phi.doubleValue()) *
+              delta;
+      double y = planetCenterInWorld.y() +
+          length.doubleValue() * Math.sin(theta.doubleValue()) * Math.sin(phi.doubleValue()) *
+              delta;
+      double z = planetCenterInWorld.z() +
+          length.doubleValue() * Math.cos(theta.doubleValue()) * delta;
+
+      // add the position to the list
+      positions.add(new Pos(x, y, z));
+    }
+
+    return positions;
   }
 
   /**
@@ -95,7 +159,12 @@ public class SectorPlanet extends PhysicsObject {
   private List<Pos> calculateParticlePositions3DBoundToDrawCircleRadius(SpaceShipSpace space,
                                                                         Pos planetCenterInWorldRelativeToShip,
                                                                         double radiusOfPlanetOnDrawSphereSurface) {
-    int particleCount = 3000;
+    // use fewer particles if the planet is farther away from the ship,
+    // and cap at 3000 particles
+    int particleCount = (int) (radiusOfPlanetOnDrawSphereSurface * 250);
+    if (particleCount > 3000) {
+      particleCount = 3000;
+    }
 
     // we need to generate a list of particle positions that are bound to the 'draw sphere'
     // (we are given the center of the object for reference)

@@ -18,6 +18,7 @@ import net.skycade.serverruntime.api.space.GameSpace;
 import net.skycade.space.constants.PhysicsAndRenderingConstants;
 import net.skycade.space.model.dimension.SpaceDimension;
 import net.skycade.space.model.distance.LightYear;
+import net.skycade.space.model.physics.object.SectorPlanet;
 import net.skycade.space.model.physics.object.SectorStar;
 import net.skycade.space.model.physics.vector.SectorContainedPos;
 import net.skycade.space.model.physics.vector.SectorContainedVec;
@@ -105,21 +106,8 @@ public class SpaceShipSpace extends GameSpace {
     //
 
     scheduleNextTick((in) -> {
-      SectorContainedPos starPos =
-          new SectorContainedPos(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("-84400000"));
-      SectorStar star = new SectorStar(starPos, new BigDecimal("1737400"));
-
-      SectorContainedPos secondStarPos =
-          new SectorContainedPos(new BigDecimal("-44400000"), BigDecimal.ZERO,
-              new BigDecimal("-44400000"));
-      SectorStar secondStar = new SectorStar(secondStarPos, new BigDecimal("2737400"));
-
-      // add the star to the sector
-      this.sector.addContainedObject(star);
-      this.sector.addContainedObject(secondStar);
-
-      // add 100 random small stars around the spaceship
-      for (int i = 0; i < 200; i++) {
+      // add random small stars around the spaceship
+      for (int i = 0; i < 250; i++) {
         // random x between -1 and 1
         double x = random(-0.00001, 0.00001);
         BigDecimal xBigDecimal = new BigDecimal(x);
@@ -189,10 +177,35 @@ public class SpaceShipSpace extends GameSpace {
         .executionType(ExecutionType.SYNC).schedule();
 
     scheduler().buildTask(() -> {
-      this.spaceShipReference.setAcceleration(
-          new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("-10000000")));
-    }).schedule();
+      scheduler().buildTask(() -> {
+        this.spaceShipReference.setAcceleration(
+            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("-80000000")));
+      }).schedule();
 
+      scheduler().buildTask(() -> {
+        this.spaceShipReference.setAcceleration(
+            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("80000000")));
+      }).delay(Duration.ofSeconds(3)).schedule();
+
+      scheduler().buildTask(() -> {
+        SectorPlanet planet = new SectorPlanet(this.spaceShipReference.getPosition()
+            .sub(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("10000000")),
+            new BigDecimal("1737400"));
+        // add the planet to the sector
+        this.sector.addContainedObject(planet);
+
+        this.spaceShipReference.setAcceleration(
+            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+        this.spaceShipReference.setVelocity(
+            new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+        this.spaceShipReference.thrustForward(new BigDecimal("500"), 10, this);
+        this.spaceShipReference.setAngularVelocity(
+            new SectorContainedVec(new BigDecimal(Math.PI / -2000), BigDecimal.ZERO,
+                BigDecimal.ZERO));
+      }).delay(Duration.ofSeconds(6)).schedule();
+
+    }).delay(Duration.ofSeconds(3)).schedule();
+//
 //    scheduler().buildTask(() -> {
 //      this.spaceShipReference.thrustForward(new BigDecimal("5000"), 3, this);
 //    }).schedule();

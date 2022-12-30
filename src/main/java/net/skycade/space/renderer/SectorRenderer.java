@@ -3,6 +3,7 @@ package net.skycade.space.renderer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -56,15 +57,25 @@ public class SectorRenderer {
       particles.addAll(List.of(positions));
     }
 
-    for (int i = 0; i < particles.size(); i++) {
-//      // if it's the last particle and less than 4,000 have been sent, send the rest.
-//      if (i == particles.size() - 1 && i < 2000) {
-//        int remaining = 2000 - i;
-//        drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particles.get(i)), remaining);
-//        break;
-//      }
+    Collections.shuffle(particles);
 
-      drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particles.get(i)), 2);
+    for (int i = 0; i < particles.size(); i++) {
+      Pos particle = particles.get(i);
+      int drawn = i * 2;
+
+      // if last element
+      if (i == particles.size() - 1 && drawn < 8000) {
+        drawParticle(space,
+            translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle), 8000 - drawn);
+        break;
+      }
+
+      if (drawn >= 8000) {
+        break;
+      }
+
+      drawParticle(space,
+          translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle), 2);
     }
   }
 

@@ -108,12 +108,12 @@ public class SectorStar extends PhysicsObject {
         .divide(new BigDecimal("299792458"), 10, RoundingMode.HALF_UP);
 
     // max length 15
-    if (length.compareTo(new BigDecimal("25")) > 0) {
-      length = new BigDecimal("25");
+    if (length.compareTo(new BigDecimal("20")) > 0) {
+      length = new BigDecimal("20");
     }
 
     // calculate the particle count based on the length of the line
-    int particleCount = length.divide(new BigDecimal("0.5"), 10, RoundingMode.HALF_UP).intValue();
+    int particleCount = length.divide(new BigDecimal("0.2"), 10, RoundingMode.HALF_UP).intValue();
     for (int i = 0; i < particleCount; i++) {
       // calculate the position of the particle
       // create a line in the direction of the ship's velocity
@@ -137,8 +137,8 @@ public class SectorStar extends PhysicsObject {
       double y = starCenterInWorld.y() +
           length.doubleValue() * Math.sin(theta.doubleValue()) * Math.sin(phi.doubleValue()) *
               delta;
-      double z = starCenterInWorld.z() +
-          length.doubleValue() * Math.cos(theta.doubleValue()) * delta;
+      double z =
+          starCenterInWorld.z() + length.doubleValue() * Math.cos(theta.doubleValue()) * delta;
 
       // add the position to the list
       positions.add(new Pos(x, y, z));
@@ -158,9 +158,12 @@ public class SectorStar extends PhysicsObject {
   private List<Pos> calculateParticlePositions3DBoundToDrawCircleRadius(SpaceShipSpace space,
                                                                         Pos starCenterInWorldRelativeToShip,
                                                                         double radiusOfStarOnDrawSphereSurface) {
-    // use exponentially fewer particles if the star is farther away from the ship,
-    // and exponentially more particles if the star is closer to the ship
-    int particleCount = (int) (Math.pow(radiusOfStarOnDrawSphereSurface, 2) * 45);
+    // use exponentially fewer particles if the planet is farther away from the ship,
+    // and cap at 3000 particles
+    int particleCount = (int) (radiusOfStarOnDrawSphereSurface * 100);
+    if (particleCount > 3000) {
+      particleCount = 3000;
+    }
 
     // we need to generate a list of particle positions that are bound to the 'draw sphere'
     // (we are given the center of the object for reference)
