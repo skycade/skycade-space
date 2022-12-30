@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.UUID;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
-import net.minestom.server.event.instance.InstanceTickEvent;
-import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.AnvilLoader;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -88,7 +86,7 @@ public class SpaceShipSpace extends GameSpace {
     this.instanceBoundPlayerEventNode().addListener(PlayerSpawnEvent.class, event -> {
       event.getPlayer().setRespawnPoint(SpaceShipSpaceConstants.SPAWN_POSITION);
       event.getPlayer().teleport(SpaceShipSpaceConstants.SPAWN_POSITION);
-      event.getPlayer().setGameMode(GameMode.SPECTATOR);
+      event.getPlayer().setGameMode(GameMode.SURVIVAL);
 
       playerJoinTime = System.currentTimeMillis();
 
@@ -120,21 +118,21 @@ public class SpaceShipSpace extends GameSpace {
       this.sector.addContainedObject(star);
       this.sector.addContainedObject(secondStar);
 
-      // add 400 random small stars around the spaceship
+      // add 100 random small stars around the spaceship
       for (int i = 0; i < 200; i++) {
-        // random x between -0.2 and 0.2
-        int x = (int) (Math.random() * 4000000) - 2000000;
-        BigDecimal xBigDecimal = new BigDecimal(x + "." + randomNumber(50));
+        // random x between -1 and 1
+        double x = random(-0.00001, 0.00001);
+        BigDecimal xBigDecimal = new BigDecimal(x);
         LightYear xLightYear = LightYear.of(xBigDecimal);
 
         // random y between -1 and 1
-        int y = (int) (Math.random() * 4000000) - 2000000;
-        BigDecimal yBigDecimal = new BigDecimal(y + "." + randomNumber(50));
+        double y = random(-0.00001, 0.00001);
+        BigDecimal yBigDecimal = new BigDecimal(y);
         LightYear yLightYear = LightYear.of(yBigDecimal);
 
-        // random z between -1 and 1
-        int z = (int) (Math.random() * 4000000) - 2000000;
-        BigDecimal zBigDecimal = new BigDecimal(z + "." + randomNumber(50));
+        // random z between -1 and 0
+        double z = random(-0.0001, 0);
+        BigDecimal zBigDecimal = new BigDecimal(z);
         LightYear zLightYear = LightYear.of(zBigDecimal);
 
         // create the star
@@ -150,12 +148,17 @@ public class SpaceShipSpace extends GameSpace {
     });
   }
 
-  public String randomNumber(int digits) {
+  private String randomNumber(int digits) {
     StringBuilder number = new StringBuilder();
     for (int i = 0; i < digits; i++) {
       number.append((int) (Math.random() * 10));
     }
     return number.toString();
+  }
+
+
+  private double random(double min, double max) {
+    return min + Math.random() * (max - min);
   }
 
   private record BeamData(Pos start, Pos end) {
@@ -184,7 +187,12 @@ public class SpaceShipSpace extends GameSpace {
           this.spaceShipReference.tickPhysics();
         }).repeat(Duration.ofMillis(PhysicsAndRenderingConstants.PHYSICS_DELAY_MILLIS))
         .executionType(ExecutionType.SYNC).schedule();
-//
+
+    scheduler().buildTask(() -> {
+      this.spaceShipReference.setAcceleration(
+          new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("-10000000")));
+    }).schedule();
+
 //    scheduler().buildTask(() -> {
 //      this.spaceShipReference.thrustForward(new BigDecimal("5000"), 3, this);
 //    }).schedule();

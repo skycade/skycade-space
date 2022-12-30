@@ -76,12 +76,75 @@ public class SectorStar extends PhysicsObject {
 
     // if the velocity is greater than the speed of light,
     // draw "hyperspace" lines in the direction of the ship's velocity
-    if (shipVelocity.compareTo(new BigDecimal("299792458")) > 0) {
+    if (shipVelocity.compareTo(new BigDecimal("10792458")) > 0) {
       // todo: generate a line that is scaled based on the velocity of the ship
-      return Collections.emptyList();
+      return calculateParticlePositionsHyperspace3DBoundToDrawCircleRadius(space,
+          starCenterInWorld);
     }
 
     return Collections.singletonList(starCenterInWorld);
+  }
+
+  /**
+   * Calculates the positions of the particles that make up the star in hyperspace.
+   *
+   * @param space             space to draw the star in.
+   * @param starCenterInWorld center of the star in the world.
+   * @return the positions of the particles that make up the star.
+   */
+  private List<Pos> calculateParticlePositionsHyperspace3DBoundToDrawCircleRadius(
+      SpaceShipSpace space, Pos starCenterInWorld) {
+    List<Pos> positions = new ArrayList<>();
+    // the ship's velocity
+    BigDecimal shipVelocity = space.getSpaceShipReference().getVelocity().length();
+    // theta = vertical angle
+    BigDecimal theta = space.getSpaceShipReference().getVelocity().theta();
+    // phi = horizontal angle
+    BigDecimal phi = space.getSpaceShipReference().getVelocity().phi();
+
+    // calculate the length of the line based on the velocity of the ship
+    // e.g., speed of light = line length of 10 meters
+    BigDecimal length = shipVelocity.multiply(new BigDecimal("10"))
+        .divide(new BigDecimal("299792458"), 10, RoundingMode.HALF_UP);
+
+    // max length 15
+    if (length.compareTo(new BigDecimal("25")) > 0) {
+      length = new BigDecimal("25");
+    }
+
+    // calculate the particle count based on the length of the line
+    int particleCount = length.divide(new BigDecimal("0.5"), 10, RoundingMode.HALF_UP).intValue();
+    for (int i = 0; i < particleCount; i++) {
+      // calculate the position of the particle
+      // create a line in the direction of the ship's velocity
+      double delta = (double) i / particleCount;
+
+      // now calculate the x, y, and z coordinates of the particle
+      // that draw a line going in the direction of the ship's velocity
+      // keep in mind:
+      // top-down view:
+      // forwards: -z
+      //       -z
+      //       |
+      // -x  ------ +x
+      //       |
+      //       +z
+      //
+
+      double x = starCenterInWorld.x() +
+          length.doubleValue() * Math.sin(theta.doubleValue()) * Math.cos(phi.doubleValue()) *
+              delta;
+      double y = starCenterInWorld.y() +
+          length.doubleValue() * Math.sin(theta.doubleValue()) * Math.sin(phi.doubleValue()) *
+              delta;
+      double z = starCenterInWorld.z() +
+          length.doubleValue() * Math.cos(theta.doubleValue()) * delta;
+
+      // add the position to the list
+      positions.add(new Pos(x, y, z));
+    }
+
+    return positions;
   }
 
   /**

@@ -115,6 +115,22 @@ public record SectorContainedVec(BigDecimal x, BigDecimal y, BigDecimal z)
     return x.multiply(other.x()).add(y.multiply(other.y())).add(z.multiply(other.z()));
   }
 
+  public BigDecimal theta() {
+    if (!((x.equals(BigDecimal.ZERO) && y.compareTo(BigDecimal.ZERO) > 0) ||
+        (x.equals(BigDecimal.ZERO) && y.compareTo(BigDecimal.ZERO) < 0))) {
+      return BigDecimal.ZERO;
+    }
+    return BigDecimalMath.atan2(y, x, MathContext.DECIMAL128);
+  }
+
+  public BigDecimal phi() {
+    if (!((x.equals(BigDecimal.ZERO) && z.compareTo(BigDecimal.ZERO) > 0) ||
+        (x.equals(BigDecimal.ZERO) && z.compareTo(BigDecimal.ZERO) < 0))) {
+      return BigDecimal.ZERO;
+    }
+    return BigDecimalMath.atan2(z, x, MathContext.DECIMAL128);
+  }
+
   @Override
   public BigDecimal length() {
     return BigDecimal.valueOf(Math.sqrt(x.pow(2).add(y.pow(2)).add(z.pow(2)).doubleValue()));

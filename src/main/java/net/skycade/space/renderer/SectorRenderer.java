@@ -57,12 +57,12 @@ public class SectorRenderer {
     }
 
     for (int i = 0; i < particles.size(); i++) {
-      // if it's the last particle and less than 4,000 have been sent, send the rest.
-      if (i == particles.size() - 1 && i < 4000) {
-        int remaining = 4000 - i;
-        drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particles.get(i)), remaining);
-        break;
-      }
+//      // if it's the last particle and less than 4,000 have been sent, send the rest.
+//      if (i == particles.size() - 1 && i < 2000) {
+//        int remaining = 2000 - i;
+//        drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particles.get(i)), remaining);
+//        break;
+//      }
 
       drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particles.get(i)), 2);
     }
