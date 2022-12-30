@@ -135,7 +135,7 @@ public class SectorRenderer {
    */
   private void drawParticle(GameSpace space, Pos minecraftPos, int count) {
     ParticlePacket particlePacket =
-        ParticleCreator.createParticlePacket(Particle.CRIT, minecraftPos.x(), minecraftPos.y(),
+        ParticleCreator.createParticlePacket(Particle.FIREWORK, minecraftPos.x(), minecraftPos.y(),
             minecraftPos.z(), 0, 0, 0, count);
     space.sendGroupedPacket(particlePacket);
   }

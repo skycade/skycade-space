@@ -197,8 +197,8 @@ public class SpaceShipSpace extends GameSpace {
             new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
         this.spaceShipReference.setVelocity(
             new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-        this.spaceShipReference.thrustForward(new BigDecimal("50000000"), 30, this);
-//        this.spaceShipReference.setAngularVelocity(
+        this.spaceShipReference.thrustForward(new BigDecimal("500"), 5, this);
+        //        this.spaceShipReference.setAngularVelocity(
 //            new SectorContainedVec(new BigDecimal(Math.PI / 2000), new BigDecimal(Math.PI / 2000),
 //                BigDecimal.ZERO));
       }).delay(Duration.ofSeconds(6)).schedule();
