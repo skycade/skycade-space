@@ -162,7 +162,7 @@ public class SpaceShipSpace extends GameSpace {
 //
 //    // cancel the previous task
 //    scheduler().buildTask(task1::cancel).delay(Duration.ofSeconds(3)).schedule();
-//
+
     scheduler().buildTask(sectorRenderer::render)
         .repeat(Duration.ofMillis(PhysicsAndRenderingConstants.RENDER_DELAY_MILLIS))
         .executionType(ExecutionType.SYNC).schedule();
@@ -198,9 +198,9 @@ public class SpaceShipSpace extends GameSpace {
         this.spaceShipReference.setVelocity(
             new SectorContainedVec(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
         this.spaceShipReference.thrustForward(new BigDecimal("500"), 5, this);
-        //        this.spaceShipReference.setAngularVelocity(
-//            new SectorContainedVec(new BigDecimal(Math.PI / 2000), new BigDecimal(Math.PI / 2000),
-//                BigDecimal.ZERO));
+                this.spaceShipReference.setAngularVelocity(
+            new SectorContainedVec(new BigDecimal(Math.PI / 2000), new BigDecimal(Math.PI / 2000),
+                new BigDecimal(Math.PI / 2000)));
       }).delay(Duration.ofSeconds(6)).schedule();
 
     }).delay(Duration.ofSeconds(3)).schedule();

@@ -51,9 +51,7 @@ public class SkycadeSpaceBootstrapper extends Game {
 
   @Override
   protected List<InstanceContainer> instances() {
-    return List.of(
-        SpaceShipSpace.INSTANCE
-    );
+    return List.of(SpaceShipSpace.INSTANCE);
   }
 
   @Override

@@ -65,8 +65,8 @@ public class SectorRenderer {
 
       // if last element
       if (i == particles.size() - 1 && drawn < 8000) {
-        drawParticle(space,
-            translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle), 8000 - drawn);
+        drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle),
+            2 * (8000 - drawn));
         break;
       }
 
@@ -74,8 +74,7 @@ public class SectorRenderer {
         break;
       }
 
-      drawParticle(space,
-          translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle), 2);
+      drawParticle(space, translateDrawCircle3DPointToRadiusBoundPerspective2DPoint(particle), 2);
     }
   }
 
